@@ -1,0 +1,41 @@
+# Build output
+/dist/
+/dist-ssr/
+
+
+# Dependencies
+/node_modules/
+
+
+# Vite caches (may appear under node_modules as well)
+/.vite/
+/node_modules/.vite/
+
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# Environment files (keep examples committed)
+.env
+.env.*
+!.env.example
+
+
+# Editors/OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+
+# Misc
+*.local
+*.sw?
