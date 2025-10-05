@@ -5,7 +5,12 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { elevationStats } from './elevation';
+import { initAnalytics } from './analytics';
 import './style.css';
+
+
+// Start google analytics
+initAnalytics();
 
 // Fix Leaflet marker icons when bundling
 // @ts-ignore
