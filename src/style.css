@@ -1,0 +1,31 @@
+:root { --bg:#0b1020; --panel:#0b1222; --line:#1f2640; --fg:#e2e8f0; --muted:#9fb0d3; --accent:#38bdf8; --danger:#ef4444; }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial;background:var(--bg);color:var(--fg)}
+
+#map{position:fixed;inset:0;height:100svh;width:100vw}
+
+.panel{position:fixed;z-index:10;background:rgba(11,18,34,.92);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.panel .small{font-size:12px}
+.panel .muted{color:var(--muted)}
+
+.panel.stats{top:env(safe-area-inset-top,10px);left:env(safe-area-inset-left,10px);padding:10px 12px;min-width:180px}
+.panel.sheet{left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,10px) + 74px);width:min(720px,92vw);padding:12px}
+.panel.sheet.hidden{display:none}
+.handle{width:44px;height:5px;border-radius:999px;background:#23305e;margin:4px auto 10px auto}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.field input, .field select, .field button{background:#0e1530;border:1px solid #23305e;color:var(--fg);padding:10px;border-radius:10px;outline:none}
+.field input:focus, .field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(56,189,248,.2)}
+.check{display:flex;gap:8px;align-items:center}
+.danger{border-color:#6b1f2d;background:#2b0e16}
+
+.fab{position:fixed;z-index:11;border-radius:999px;border:1px solid var(--line);background:#0e1530;color:#e2e8f0;padding:12px 16px;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.fab:active{transform:translateY(1px)}
+.fab.calc{right:env(safe-area-inset-right,14px);bottom:env(safe-area-inset-bottom,14px)}
+.fab.options{right:env(safe-area-inset-right,14px);bottom:calc(env(safe-area-inset-bottom,14px) + 62px)}
+
+@media (max-width:640px){
+  .row{grid-template-columns:1fr}
+  .panel.stats{min-width:unset}
+}
