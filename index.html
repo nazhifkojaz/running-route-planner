@@ -10,7 +10,7 @@
     <div id="statsPanel" class="panel stats">
       <div><strong>Distance:</strong> <span id="distVal">-</span></div>
       <div><strong>Elevation:</strong> <span id="elevVal">-</span></div>
-      <div><strong>Elapsed Time:</strong> <span id="etaVal">-</span></div>
+      <div><strong>Estimated Time:</strong> <span id="etaVal">-</span></div>
     </div>
 
     <!-- Toggleable entry form (bottom sheet) -->
@@ -47,7 +47,6 @@
         <p id="engineNote" class="small muted"></p>
 
         <div class="row">
-          <button id="undoBtn" type="button">Undo last waypoint</button>
           <button id="resetBtn" class="danger" type="button" title="Remove all waypoints">Reset waypoints</button>
         </div>
       </details>
@@ -61,6 +60,9 @@
 
     <!-- Map -->
     <div id="map"></div>
+    
+    <!-- FABs: UNDO (bottom-left) -->
+    <button id="undoBtn" class="fab undo" title="Undo last waypoint" aria-label="Undo last waypoint">↶</button>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
