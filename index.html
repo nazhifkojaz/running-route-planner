@@ -2,67 +2,123 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <title>Running Route Planner</title>
   </head>
   <body>
-    <!-- Stats overlay (top-left) -->
+    <!-- Stats (top-left): elevation, ETA, kcal -->
     <div id="statsPanel" class="panel stats">
-      <div><strong>Distance:</strong> <span id="distVal">-</span></div>
-      <div><strong>Elevation:</strong> <span id="elevVal">-</span></div>
-      <div><strong>Estimated Time:</strong> <span id="etaVal">-</span></div>
+      <div><strong>Elev:</strong> <span id="elevVal">-</span></div>
+      <div><strong>ETA:</strong> <span id="etaVal">-</span></div>
+      <div><strong>kcal:</strong> <span id="calVal">-</span></div>
     </div>
 
-    <!-- Toggleable entry form (bottom sheet) -->
-    <div id="panel" class="panel sheet hidden" role="dialog" aria-modal="true">
-      <div class="handle" aria-hidden="true"></div>
+    <!-- Distance (top-right): show like "3.45 km" -->
+    <div id="distancePanel" class="panel distance">
+      <span id="distanceVal">-</span>
+    </div>
 
-      <div class="field">
+    <!-- Bottom-left controls: bracket (GPS / + / −) + Undo (all aligned) -->
+    <div id="leftTools" aria-label="Map tools">
+      <div class="panel tools">
+        <button id="locBtn" class="btn-square icon" title="Go to my location" aria-label="Go to my location">⌖</button>
+        <button id="zoomInBtn" class="btn-square icon" title="Zoom in" aria-label="Zoom in">+</button>
+        <button id="zoomOutBtn" class="btn-square icon" title="Zoom out" aria-label="Zoom out">−</button>
+      </div>
+      <button id="undoFab" class="btn-square undo" title="Undo last waypoint" aria-label="Undo last waypoint">↶</button>
+    </div>
+
+    <!-- Bottom-right: settings toggle button + expandable panel -->
+    <button
+      id="settingsBtn"
+      class="fab settings"
+      title="Settings"
+      aria-controls="settingsPanel"
+      aria-expanded="false"
+    >☰</button>
+
+    <div
+      id="settingsPanel"
+      class="panel settings hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settingsTitle"
+    >
+      <div class="sheet-header">
+        <h3 id="settingsTitle">Settings</h3>
+        <button id="settingsClose" class="icon-btn" title="Close">✕</button>
+      </div>
+
+      <section>
+        <h4>Markers</h4>
+        <div class="row">
+          <button id="undoMenuBtn" type="button">Undo</button>
+          <button id="clearBtn" type="button" class="danger">Clear markers</button>
+          <button id="reverseBtn" type="button">Reverse route</button>
+        </div>
+      </section>
+
+      <section>
+        <h4>Loop</h4>
         <label class="check">
           <input id="loop" type="checkbox" />
-          Loop route (return to start)
+          Return to start (loop route)
         </label>
-      </div>
+      </section>
 
-      <div class="row">
-        <div class="field">
-          <label for="laps">Laps</label>
-          <input id="laps" type="number" min="1" value="1" inputmode="numeric" />
-        </div>
-        <div class="field">
-          <label for="pace">Target pace (/km)</label>
-          <input id="pace" type="text" placeholder="e.g. 5:30" />
-        </div>
-      </div>
-
-      <details class="field">
-        <summary>Advanced settings</summary>
-        <label class="small muted" for="engine">Routing engine</label>
-        <select id="engine">
-          <option value="ors-foot-direction" selected>ORS (foot-walking, direction)</option>
-          <option value="ors-cycle-direction">ORS (cycling-regular, direction)</option>
-          <option value="ors-foot-snap">ORS (foot-walking, snap to nearest edge)</option>
-          <option value="osrm-driving">OSRM (driving, one-way aware)</option>
-        </select>
-        <p id="engineNote" class="small muted"></p>
-
+      <section>
+        <h4>Target stats</h4>
         <div class="row">
-          <button id="resetBtn" class="danger" type="button" title="Remove all waypoints">Reset waypoints</button>
+          <div class="field">
+            <label for="targetPace" class="small muted">Target pace (mm:ss per km)</label>
+            <input id="targetPace" type="text" placeholder="e.g. 5:30" />
+          </div>
+          <div class="field">
+            <label for="targetWeight" class="small muted">Weight (kg)</label>
+            <input id="targetWeight" type="number" step="0.1" min="20" max="200" inputmode="decimal" placeholder="e.g. 70" />
+          </div>
         </div>
-      </details>
+        <p class="small muted">ETA uses target pace. Calories use distance + target pace + weight. Estimates only.</p>
+      </section>
 
-      <p class="muted small">Tap the map to add waypoints. Drag markers to adjust.</p>
+      <section>
+        <h4>Routing profile</h4>
+        <div class="row profiles">
+          <label class="chip disabled" title="Foot (disabled)">
+            <input type="radio" name="profile" id="profileFoot" disabled />
+            <span class="ico">👟</span>
+          </label>
+          <label class="chip disabled" title="Road bike (disabled)">
+            <input type="radio" name="profile" id="profileBike" disabled />
+            <span class="ico">🚴</span>
+          </label>
+          <label class="chip active" title="Car (active)">
+            <input type="radio" name="profile" id="profileCar" checked />
+            <span class="ico">🚗</span>
+          </label>
+        </div>
+        <p class="small muted">Foot/Bike are disabled for now. Car (OSRM driving) is active.</p>
+      </section>
+
+      <section>
+        <h4>Export</h4>
+        <button id="exportBtn" type="button" disabled>Export as GPX</button>
+      </section>
     </div>
 
-    <!-- FABs: calculate + options -->
-    <button id="calcBtn" class="fab calc" title="Calculate route" aria-label="Calculate route">▶</button>
-    <button id="panelToggle" class="fab options" aria-controls="panel" aria-expanded="false" title="Options">⋯</button>
+    <!-- Bottom-center: profile bar (bracketed, horizontal, 44x44 like left tools) -->
+  <div id="profileBar" class="panel tools horizontal" role="toolbar" aria-label="Routing profile">
+    <button id="footBtn" class="btn-square" disabled title="Foot">👟</button>
+    <button id="bikeBtn" class="btn-square" disabled title="Road bike">🚴</button>
+    <button id="carBtn"  class="btn-square" aria-pressed="true" title="Car">🚗</button>
+  </div>
+
 
     <!-- Map -->
     <div id="map"></div>
-    
-    <!-- FABs: UNDO (bottom-left) -->
-    <button id="undoBtn" class="fab undo" title="Undo last waypoint" aria-label="Undo last waypoint">↶</button>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
