@@ -53,8 +53,10 @@ const ORS_KEY: string = (import.meta as any).env?.VITE_ORS_KEY ?? '';
 
 // ===== Map =====
 const map = L.map('map');
+const routePane = map.createPane('routePane');
+routePane.style.zIndex = '450'
 const kmPane = map.createPane('kmPane');
-kmPane.style.zIndex = '650';
+kmPane.style.zIndex = '800';
 const PALEMBANG: [number, number] = [-2.9909, 104.7566]; // Leaflet is [lat, lon]
 map.setView(PALEMBANG, 13);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -145,12 +147,18 @@ function addKmLabels(latlngs: [number, number][], totalMeters?: number) {
       const lon = a.lng + (b.lng - a.lng) * t;
 
       // Invisible anchor marker with a permanent tooltip as the label
-      L.marker([lat, lon], { opacity: 0, interactive: false, pane: 'kmPane' })
+      const anchorless = L.divIcon({ 
+        className: 'km-anchor',
+        iconSize: [0,0],
+        iconAnchor: [0,0]
+      });
+      L.marker([lat, lon], { icon: anchorless, interactive: false })
         .bindTooltip(`${k} km`, {
           permanent: true,
           direction: 'center',
-          className: 'km-tip',   // <- matches the CSS above
           offset: [0, 0],
+          className: 'km-tip',   // <- matches the CSS above
+          pane: 'kmPane'
         })
         .addTo(kmLayer)
         .openTooltip();
@@ -208,7 +216,11 @@ async function renderRoute(){
     const latlngs = (geometry as LonLat[]).map(([lon,lat])=>[lat,lon]) as [number,number][];
     lastRouteLatLngs = latlngs;
 
-    routeLayer = L.polyline(latlngs, { weight:5, opacity:.9 }).addTo(map);
+    routeLayer = L.polyline(latlngs, {
+      weight:5,
+      opacity:.9,
+      pane: 'routePane'
+    }).addTo(map);
     map.fitBounds(routeLayer.getBounds(), { padding:[20,20] });
 
     baseDistanceM = distance;
@@ -368,7 +380,11 @@ loadGpxInput.addEventListener('change', async () => {
 
     // 2) Draw route polyline
     lastRouteLatLngs = route.slice();
-    routeLayer = L.polyline(route, { weight: 5, opacity: 0.9 }).addTo(map);
+    routeLayer = L.polyline(route, {
+      weight: 5,
+      opacity: 0.9,
+      pane: 'routePane'
+    }).addTo(map);
 
     // 3) Refocus camera
     map.fitBounds(routeLayer.getBounds(), { padding: [20, 20] });
