@@ -171,39 +171,42 @@ function addKmLabels(latlngs: [number, number][], totalMeters?: number) {
   }
 }
 
-function downloadGPX(gpx: string, filename = 'route.gpx') {
-  const ua = navigator.userAgent || '';
-  const isAndroid = /Android/i.test(ua);
+async function downloadGPX(gpx: string, filename = 'route.gpx') {
+  const type = 'application/gpx+xml';
+  const blob = new Blob([gpx], { type });
+
+  // file system access
+  try {
+    const w = window as any;
+    if (w.showSaveFilePicker) {
+      const handle = await w.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'GPX route', accept: { [type]: ['.gpx'] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    }
+  } catch {
+    /* continue to next fallback */
+  }
 
   // web share
   try {
-    const file = new File([gpx], filename, { type: 'application/gpx+xml' });
-    const navAny = navigator as any;
-    if (navAny?.share) {
-      navAny.share({ files: [file], title: filename, text: 'GPX route' })
-        .catch(() => { /* user canceled, continue to fallback */ });
-      return; // fire-and-forget;
+    const n = navigator as any;
+    if (n.share) {
+      const file = new File([blob], filename, { type });
+      await n.share({ files: [file], title: filename, text: 'GPX route' });
+      return;
     }
   } catch {
-    // continue to fallback
-  }
-
-  // use data url
-  if (isAndroid) {
-    const dataUrl = 'data:application/gpx+xml;charset=utf-8,' + encodeURIComponent(gpx);
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => a.remove(), 0);
-    return;
+    /* continue to next fallback */
   }
 
   // blob
   try {
-    const blob = new Blob([gpx], { type: 'application/octet-stream' });
-    const url  = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
@@ -212,15 +215,11 @@ function downloadGPX(gpx: string, filename = 'route.gpx') {
     setTimeout(() => {
       a.remove();
       try { URL.revokeObjectURL(url); } catch {}
-    }, 2000); // give time for the download to start
+    }, 2500);
     return;
   } catch {
-    // fall through
+    /* continue to next fallback */
   }
-
-  // 4) Last resort: navigate to a data URL (opens share sheet / save UI)
-  const dataUrl = 'data:application/gpx+xml;charset=utf-8,' + encodeURIComponent(gpx);
-  window.location.href = dataUrl;
 }
 
 // ===== Providers (OSRM primary, ORS driving-car fallback if key set) =====
