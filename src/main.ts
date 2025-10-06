@@ -53,6 +53,8 @@ const ORS_KEY: string = (import.meta as any).env?.VITE_ORS_KEY ?? '';
 
 // ===== Map =====
 const map = L.map('map');
+const kmPane = map.createPane('kmPane');
+kmPane.style.zIndex = '650';
 const PALEMBANG: [number, number] = [-2.9909, 104.7566]; // Leaflet is [lat, lon]
 map.setView(PALEMBANG, 13);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -124,36 +126,36 @@ function addKmLabels(latlngs: [number, number][], totalMeters?: number) {
   kmLayer.clearLayers();
   if (!latlngs.length) return;
 
-  // if totalMeters is not provided, compute from the geometry
   const total = totalMeters ?? polylineDistanceMeters(latlngs);
   const kmCount = Math.floor(total / 1000);
   if (kmCount < 1) return;
 
   let cum = 0;
   let nextMark = 1000; // meters
-  let markIdx = 1;
+  let k = 1;
 
-  for (let i = 1; i < latlngs.length && markIdx <= kmCount; i++) {
+  for (let i = 1; i < latlngs.length && k <= kmCount; i++) {
     const a = L.latLng(latlngs[i - 1][0], latlngs[i - 1][1]);
     const b = L.latLng(latlngs[i][0], latlngs[i][1]);
     const seg = a.distanceTo(b);
 
-    // place as many marks as fit in this segment
-    while (cum + seg >= nextMark && markIdx <= kmCount) {
+    while (cum + seg >= nextMark && k <= kmCount) {
       const t = (nextMark - cum) / seg; // 0..1 along segment
       const lat = a.lat + (b.lat - a.lat) * t;
       const lon = a.lng + (b.lng - a.lng) * t;
 
-      L.marker([lat, lon], {
-        icon: L.divIcon({
-          className: 'km-label',
-          html: `${markIdx} km`,
-          iconSize: [1, 1],   // content-driven
-          iconAnchor: [0, 0], // top-left of the bubble
+      // Invisible anchor marker with a permanent tooltip as the label
+      L.marker([lat, lon], { opacity: 0, interactive: false, pane: 'kmPane' })
+        .bindTooltip(`${k} km`, {
+          permanent: true,
+          direction: 'center',
+          className: 'km-tip',   // <- matches the CSS above
+          offset: [0, 0],
         })
-      }).addTo(kmLayer);
+        .addTo(kmLayer)
+        .openTooltip();
 
-      markIdx++;
+      k++;
       nextMark += 1000;
     }
 
