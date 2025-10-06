@@ -171,6 +171,42 @@ function addKmLabels(latlngs: [number, number][], totalMeters?: number) {
   }
 }
 
+async function downloadGPX(gpx: string, filename = 'route.gpx') {
+  const type = 'application/gpx+xml';
+  const blob = new Blob([gpx], { type });
+
+  // try web share api
+  const share = (navigator as any).share;
+  const canShare = (navigator as any).canShare;
+  if (share && canShare?.({ files: [new File([blob], filename, { type })] })) {
+    try {
+      await share({
+        files: [new File([blob], filename, { type })],
+        title: filename,
+        text: 'GPX route',
+      });
+      return;
+    } catch (err) {
+      // User canceled or share not available, goes to fallback method
+    }
+  }
+
+  // fallback using blob link
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, 2000);
+}
+
+
 
 // ===== Providers (OSRM primary, ORS driving-car fallback if key set) =====
 async function osrmDriving(coords: LonLat[]){
@@ -344,25 +380,16 @@ bikeBtn.addEventListener('click', () => {/* disabled */});
 carBtn .addEventListener('click', () => {/* already active */});
 
 // save the route to gpx
-saveGpxBtn.addEventListener('click', () => {
+saveGpxBtn.addEventListener('click', async () => {
   if (!lastRouteLatLngs.length) return;
-
+  
   const markerLatLngs: [number, number][] = waypoints.map(([lon, lat]) => [lat, lon]);
   const gpx = toGPX(lastRouteLatLngs, {
     name: 'Planned route',
     markers: markerLatLngs,
-    // laps: 1, // optional
   });
-
-  const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'route.gpx';
-  a.click();
-  URL.revokeObjectURL(url);
+  await downloadGPX(gpx, 'route.gpx');
 });
-
 
 // load gpx
 loadGpxBtn.addEventListener('click', () => loadGpxInput.click());
