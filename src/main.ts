@@ -171,28 +171,25 @@ function addKmLabels(latlngs: [number, number][], totalMeters?: number) {
   }
 }
 
-async function downloadGPX(gpx: string, filename = 'route.gpx') {
-  const type = 'application/gpx+xml';
-  const blob = new Blob([gpx], { type });
+function downloadGPX(gpx: string, filename = 'route.gpx') {
+  const typeShare = 'application/gpx+xml';
+  const typeBlob  = 'application/octet-stream';
 
-  // try web share api
-  const share = (navigator as any).share;
-  const canShare = (navigator as any).canShare;
-  if (share && canShare?.({ files: [new File([blob], filename, { type })] })) {
-    try {
-      await share({
-        files: [new File([blob], filename, { type })],
-        title: filename,
-        text: 'GPX route',
-      });
-      return;
-    } catch (err) {
-      // User canceled or share not available, goes to fallback method
-    }
+  // web share
+  const navAny = navigator as any;
+  if (navAny?.share && navAny?.canShare?.({files: [new File([gpx], filename, { type: typeShare })] })) {
+    navAny.share({
+      files: [new File([gpx], filename, { type: typeShare })],
+      title: filename,
+      text: 'GPX route'
+    }).catch(() => {/* User canceled or share not available, goes to fallback method */});
+    return; // don't run the fallback if succeed
   }
 
   // fallback using blob link
-  const url = URL.createObjectURL(blob);
+  const blob = new Blob([gpx], { type: typeBlob });
+  const url  = URL.createObjectURL(blob);
+
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
@@ -200,11 +197,13 @@ async function downloadGPX(gpx: string, filename = 'route.gpx') {
   a.target = '_blank';
   document.body.appendChild(a);
   a.click();
+
   setTimeout(() => {
     a.remove();
-    URL.revokeObjectURL(url);
-  }, 2000);
+    try { URL.revokeObjectURL(url); } catch {}
+  }, 3000);
 }
+
 
 
 
@@ -388,7 +387,7 @@ saveGpxBtn.addEventListener('click', async () => {
     name: 'Planned route',
     markers: markerLatLngs,
   });
-  await downloadGPX(gpx, 'route.gpx');
+  downloadGPX(gpx, 'route.gpx');
 });
 
 // load gpx
