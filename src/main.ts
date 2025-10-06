@@ -5,7 +5,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { elevationStats } from './elevation';
-import { toGPX } from './gpx';
+import { toGPX, fromGPX } from './gpx';
 import './style.css';
 
 // Fix Leaflet marker icons when bundling
@@ -35,7 +35,10 @@ const clearBtn    = document.getElementById('clearBtn') as HTMLButtonElement;
 const reverseBtn  = document.getElementById('reverseBtn') as HTMLButtonElement;
 
 const loopChk     = document.getElementById('loop') as HTMLInputElement;
-const exportBtn   = document.getElementById('exportBtn') as HTMLButtonElement;
+const saveGpxBtn  = document.getElementById('saveGpxBtn') as HTMLButtonElement;
+const loadGpxBtn  = document.getElementById('loadGpxBtn') as HTMLButtonElement;
+const loadGpxInput= document.getElementById('loadGpxInput') as HTMLInputElement;
+
 
 const targetPaceI    = document.getElementById('targetPace') as HTMLInputElement;
 const targetWeightI  = document.getElementById('targetWeight') as HTMLInputElement;
@@ -68,9 +71,11 @@ if ('geolocation' in navigator) {
 // ===== State =====
 const waypoints: LonLat[] = [];
 const markers: L.Marker[] = [];
+const kmLayer = L.layerGroup().addTo(map);
 let routeLayer: L.Polyline | null = null;
 let baseDistanceM = 0;                      // meters (one pass)
 let lastRouteLatLngs: [number, number][] = []; // [lat, lon]
+
 
 // ===== Helpers =====
 function fmtKmBare(m: number){ return (m / 1000).toFixed(2) + ' km'; }
@@ -103,6 +108,59 @@ function estimateKcalFromPaceWeight(distanceM: number, paceSecPerKm: number, wei
   const kcalPerMin = (MET * 3.5 * weightKg) / 200;
   return kcalPerMin * durationMin;
 }
+
+
+function polylineDistanceMeters(latlngs: [number, number][]): number {
+  let d = 0;
+  for (let i = 1; i < latlngs.length; i++) {
+    const a = L.latLng(latlngs[i - 1][0], latlngs[i - 1][1]);
+    const b = L.latLng(latlngs[i][0], latlngs[i][1]);
+    d += a.distanceTo(b);
+  }
+  return d;
+}
+
+function addKmLabels(latlngs: [number, number][], totalMeters?: number) {
+  kmLayer.clearLayers();
+  if (!latlngs.length) return;
+
+  // if totalMeters is not provided, compute from the geometry
+  const total = totalMeters ?? polylineDistanceMeters(latlngs);
+  const kmCount = Math.floor(total / 1000);
+  if (kmCount < 1) return;
+
+  let cum = 0;
+  let nextMark = 1000; // meters
+  let markIdx = 1;
+
+  for (let i = 1; i < latlngs.length && markIdx <= kmCount; i++) {
+    const a = L.latLng(latlngs[i - 1][0], latlngs[i - 1][1]);
+    const b = L.latLng(latlngs[i][0], latlngs[i][1]);
+    const seg = a.distanceTo(b);
+
+    // place as many marks as fit in this segment
+    while (cum + seg >= nextMark && markIdx <= kmCount) {
+      const t = (nextMark - cum) / seg; // 0..1 along segment
+      const lat = a.lat + (b.lat - a.lat) * t;
+      const lon = a.lng + (b.lng - a.lng) * t;
+
+      L.marker([lat, lon], {
+        icon: L.divIcon({
+          className: 'km-label',
+          html: `${markIdx} km`,
+          iconSize: [1, 1],   // content-driven
+          iconAnchor: [0, 0], // top-left of the bubble
+        })
+      }).addTo(kmLayer);
+
+      markIdx++;
+      nextMark += 1000;
+    }
+
+    cum += seg;
+  }
+}
+
 
 // ===== Providers (OSRM primary, ORS driving-car fallback if key set) =====
 async function osrmDriving(coords: LonLat[]){
@@ -139,7 +197,7 @@ async function renderRoute(){
   elevVal.textContent = etaVal.textContent = calVal.textContent = '-';
   distanceV.textContent = '-';
 
-  if (waypoints.length < 2){ exportBtn.disabled = true; return; }
+  if (waypoints.length < 2){ kmLayer.clearLayers(); saveGpxBtn.disabled = true; return; }
 
   const coords = loopChk.checked ? [...waypoints, waypoints[0]] : waypoints.slice();
 
@@ -173,10 +231,11 @@ async function renderRoute(){
       calVal.textContent = '-';
     }
 
-    exportBtn.disabled = false;
+    saveGpxBtn.disabled = false;
+    addKmLabels(latlngs, distance);
   } catch {
     distanceV.textContent = 'Error';
-    exportBtn.disabled = true;
+    saveGpxBtn.disabled = true;
   }
 }
 
@@ -210,7 +269,8 @@ function clearAll(){
   clearRouteLayer();
   elevVal.textContent = etaVal.textContent = calVal.textContent = '-';
   distanceV.textContent = '-';
-  exportBtn.disabled = true;
+  kmLayer.clearLayers();
+  saveGpxBtn.disabled = true;
 }
 function reverseRoute(){
   if (waypoints.length < 2) return;
@@ -269,14 +329,94 @@ footBtn.addEventListener('click', () => {/* disabled */});
 bikeBtn.addEventListener('click', () => {/* disabled */});
 carBtn .addEventListener('click', () => {/* already active */});
 
-// Export GPX
-exportBtn.addEventListener('click', () => {
+// save the route to gpx
+saveGpxBtn.addEventListener('click', () => {
   if (!lastRouteLatLngs.length) return;
-  const gpx = toGPX(lastRouteLatLngs);
-  const blob = new Blob([gpx], { type:'application/gpx+xml' });
+
+  const markerLatLngs: [number, number][] = waypoints.map(([lon, lat]) => [lat, lon]);
+  const gpx = toGPX(lastRouteLatLngs, {
+    name: 'Planned route',
+    markers: markerLatLngs,
+    // laps: 1, // optional
+  });
+
+  const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = 'route.gpx';
   a.click();
-  URL.revokeObjectURL(a.href);
+  URL.revokeObjectURL(url);
+});
+
+
+// load gpx
+loadGpxBtn.addEventListener('click', () => loadGpxInput.click());
+
+loadGpxInput.addEventListener('change', async () => {
+  const file = loadGpxInput.files?.[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const { route, markers: gpxMarkers } = fromGPX(text); // [lat, lon][]
+
+    // 1) Clear current state/layers
+    if (routeLayer) { clearAll(); }
+
+    // 2) Draw route polyline
+    lastRouteLatLngs = route.slice();
+    routeLayer = L.polyline(route, { weight: 5, opacity: 0.9 }).addTo(map);
+
+    // 3) Refocus camera
+    map.fitBounds(routeLayer.getBounds(), { padding: [20, 20] });
+
+    // 4) Recreate markers from GPX (if present)
+    if (gpxMarkers.length) {
+      gpxMarkers.forEach(([lat, lon]) => {
+        const m = L.marker([lat, lon], { draggable: true })
+          .on('dragend', (ev: L.LeafletEvent) => {
+            const ll = (ev.target as L.Marker).getLatLng();
+            // update matching waypoint and re-render route (if you want recalculation)
+            const idx = markers.indexOf(ev.target as L.Marker);
+            if (idx >= 0) waypoints[idx] = [ll.lng, ll.lat];
+          })
+          .addTo(map);
+        markers.push(m);
+        waypoints.push([lon, lat]); // store as [lon, lat]
+      });
+      refreshLabels();
+    }
+
+    // 5) Update distance/ETA/elev/calorie
+    // distance
+    baseDistanceM = polylineDistanceMeters(route);
+    distanceV.textContent = fmtKmBare(baseDistanceM)
+
+    // ETA
+    const pace = parsePaceSecPerKm(targetPaceI.value || '');
+    const etaSec = pace ? (baseDistanceM / 1000) * pace : null;
+    etaVal.textContent = pace && etaSec ? fmtHMS(etaSec) : '-';
+
+    // elev
+    elevVal.textContent = '...';
+    const elev = await elevationStats(route)
+    elevVal.textContent = elev ? `+${Math.round(elev.gain)} / -${Math.round(elev.loss)} m` : '-';
+
+    // calories
+    const weight = Number(targetWeightI.value);
+    if (pace && weight && etaSec){
+      const kcal = estimateKcalFromPaceWeight(baseDistanceM, pace, weight);
+      calVal.textContent = Math.round(kcal).toString();
+    } else {
+      calVal.textContent = '-';
+    }
+    
+    addKmLabels(route, baseDistanceM);
+
+  } catch (err: any) {
+    alert(`Failed to load GPX: ${err?.message ?? err}`);
+  } finally {
+    loadGpxInput.value = '';
+  }
 });
