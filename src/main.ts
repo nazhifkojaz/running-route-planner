@@ -172,40 +172,56 @@ function addKmLabels(latlngs: [number, number][], totalMeters?: number) {
 }
 
 function downloadGPX(gpx: string, filename = 'route.gpx') {
-  const typeShare = 'application/gpx+xml';
-  const typeBlob  = 'application/octet-stream';
+  const ua = navigator.userAgent || '';
+  const isAndroid = /Android/i.test(ua);
 
   // web share
-  const navAny = navigator as any;
-  if (navAny?.share && navAny?.canShare?.({files: [new File([gpx], filename, { type: typeShare })] })) {
-    navAny.share({
-      files: [new File([gpx], filename, { type: typeShare })],
-      title: filename,
-      text: 'GPX route'
-    }).catch(() => {/* User canceled or share not available, goes to fallback method */});
-    return; // don't run the fallback if succeed
+  try {
+    const file = new File([gpx], filename, { type: 'application/gpx+xml' });
+    const navAny = navigator as any;
+    if (navAny?.share) {
+      navAny.share({ files: [file], title: filename, text: 'GPX route' })
+        .catch(() => { /* user canceled, continue to fallback */ });
+      return; // fire-and-forget;
+    }
+  } catch {
+    // continue to fallback
   }
 
-  // fallback using blob link
-  const blob = new Blob([gpx], { type: typeBlob });
-  const url  = URL.createObjectURL(blob);
+  // use data url
+  if (isAndroid) {
+    const dataUrl = 'data:application/gpx+xml;charset=utf-8,' + encodeURIComponent(gpx);
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 0);
+    return;
+  }
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.rel = 'noopener';
-  a.target = '_blank';
-  document.body.appendChild(a);
-  a.click();
+  // blob
+  try {
+    const blob = new Blob([gpx], { type: 'application/octet-stream' });
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      a.remove();
+      try { URL.revokeObjectURL(url); } catch {}
+    }, 2000); // give time for the download to start
+    return;
+  } catch {
+    // fall through
+  }
 
-  setTimeout(() => {
-    a.remove();
-    try { URL.revokeObjectURL(url); } catch {}
-  }, 3000);
+  // 4) Last resort: navigate to a data URL (opens share sheet / save UI)
+  const dataUrl = 'data:application/gpx+xml;charset=utf-8,' + encodeURIComponent(gpx);
+  window.location.href = dataUrl;
 }
-
-
-
 
 // ===== Providers (OSRM primary, ORS driving-car fallback if key set) =====
 async function osrmDriving(coords: LonLat[]){
