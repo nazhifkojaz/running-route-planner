@@ -9,36 +9,6 @@
     <title>Running Route Planner</title>
   </head>
   <body>
-    <!-- Stats (top-left): elevation, ETA, kcal -->
-    <div id="statsPanel" class="panel stats">
-      <div><strong>Elev:</strong> <span id="elevVal">-</span></div>
-      <div><strong>ETA:</strong> <span id="etaVal">-</span></div>
-      <div><strong>kcal:</strong> <span id="calVal">-</span></div>
-    </div>
-
-    <!-- Distance (top-right): show like "3.45 km" -->
-    <div id="distancePanel" class="panel distance">
-      <span id="distanceVal">-</span>
-    </div>
-
-    <!-- Bottom-left controls: bracket (GPS / + / −) + Undo (all aligned) -->
-    <div id="leftTools" aria-label="Map tools">
-      <div class="panel tools">
-        <button id="locBtn" class="btn-square icon" title="Go to my location" aria-label="Go to my location">⌖</button>
-        <button id="zoomInBtn" class="btn-square icon" title="Zoom in" aria-label="Zoom in">+</button>
-        <button id="zoomOutBtn" class="btn-square icon" title="Zoom out" aria-label="Zoom out">−</button>
-      </div>
-      <button id="undoFab" class="btn-square undo" title="Undo last waypoint" aria-label="Undo last waypoint">↶</button>
-    </div>
-
-    <!-- Bottom-right: settings toggle button + expandable panel -->
-    <button
-      id="settingsBtn"
-      class="fab settings"
-      title="Settings"
-      aria-controls="settingsPanel"
-      aria-expanded="false"
-    >☰</button>
 
     <div
       id="settingsPanel"
@@ -55,7 +25,6 @@
       <section>
         <h4>Markers</h4>
         <div class="row">
-          <button id="undoMenuBtn" type="button">Undo</button>
           <button id="clearBtn" type="button" class="danger">Clear markers</button>
           <button id="reverseBtn" type="button">Reverse route</button>
         </div>
@@ -84,24 +53,32 @@
         <p class="small muted">ETA uses target pace. Calories use distance + target pace + weight. Estimates only.</p>
       </section>
 
-      <section>
-        <h4>Routing profile</h4>
-        <div class="row profiles">
-          <label class="chip disabled" title="Foot (disabled)">
-            <input type="radio" name="profile" id="profileFoot" disabled />
-            <span class="ico">👟</span>
+      <!-- Routing engine -->
+      <section class="field">
+        <label class="small">Routing engine</label>
+        <div class="row">
+          <label class="check">
+            <input type="radio" name="engine" id="engineOSRM" value="osrm" checked />
+            OSRM (driving)
           </label>
-          <label class="chip disabled" title="Road bike (disabled)">
-            <input type="radio" name="profile" id="profileBike" disabled />
-            <span class="ico">🚴</span>
-          </label>
-          <label class="chip active" title="Car (active)">
-            <input type="radio" name="profile" id="profileCar" checked />
-            <span class="ico">🚗</span>
+          <label class="check">
+            <input type="radio" name="engine" id="engineORS" value="ors" />
+            ORS (snap + foot-walking)
           </label>
         </div>
-        <p class="small muted">Foot/Bike are disabled for now. Car (OSRM driving) is active.</p>
+        <p id="engineNote" class="small muted">
+          ORS requires an API key. If missing or rate-limited, OSRM will be used.
+        </p>
       </section>
+
+      <!-- ORS API key -->
+      <section class="field">
+        <label class="small" for="orsKey">ORS API key</label>
+        <input id="orsKey" type="password"
+              placeholder="Paste ORS key… (stored locally only)"
+              autocomplete="off" />
+      </section>
+
 
       <section>
       <h4>Save/Load GPX</h4>
@@ -114,14 +91,6 @@
 </section>
 
     </div>
-
-    <!-- Bottom-center: profile bar (bracketed, horizontal, 44x44 like left tools) -->
-  <div id="profileBar" class="panel tools horizontal" role="toolbar" aria-label="Routing profile">
-    <button id="footBtn" class="btn-square" disabled title="Foot">👟</button>
-    <button id="bikeBtn" class="btn-square" disabled title="Road bike">🚴</button>
-    <button id="carBtn"  class="btn-square" aria-pressed="true" title="Car">🚗</button>
-  </div>
-
 
     <!-- Map -->
     <div id="map"></div>

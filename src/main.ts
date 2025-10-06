@@ -15,22 +15,11 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, 
 
 type LonLat = [number, number]; // [lon, lat]
 
-// ===== UI Refs =====
-const elevVal   = document.getElementById('elevVal') as HTMLSpanElement;
-const etaVal    = document.getElementById('etaVal')  as HTMLSpanElement;
-const calVal    = document.getElementById('calVal')  as HTMLSpanElement;
-const distanceV = document.getElementById('distanceVal') as HTMLSpanElement;
 
-const undoFab   = document.getElementById('undoFab') as HTMLButtonElement;
-const locBtn    = document.getElementById('locBtn')  as HTMLButtonElement;
-const zoomInBtn = document.getElementById('zoomInBtn') as HTMLButtonElement;
-const zoomOutBtn= document.getElementById('zoomOutBtn') as HTMLButtonElement;
-
-const settingsBtn   = document.getElementById('settingsBtn') as HTMLButtonElement;
+// ===== UI Refs =====\
 const settingsClose = document.getElementById('settingsClose') as HTMLButtonElement;
 const settingsPanel = document.getElementById('settingsPanel') as HTMLDivElement;
 
-const undoMenuBtn = document.getElementById('undoMenuBtn') as HTMLButtonElement;
 const clearBtn    = document.getElementById('clearBtn') as HTMLButtonElement;
 const reverseBtn  = document.getElementById('reverseBtn') as HTMLButtonElement;
 
@@ -43,16 +32,18 @@ const loadGpxInput= document.getElementById('loadGpxInput') as HTMLInputElement;
 const targetPaceI    = document.getElementById('targetPace') as HTMLInputElement;
 const targetWeightI  = document.getElementById('targetWeight') as HTMLInputElement;
 
-// Bottom-center profile bar (icons; locked to car)
-const footBtn = document.getElementById('footBtn') as HTMLButtonElement;
-const bikeBtn = document.getElementById('bikeBtn') as HTMLButtonElement;
-const carBtn  = document.getElementById('carBtn')  as HTMLButtonElement;
+const engineOSRM = document.getElementById('engineOSRM') as HTMLInputElement;
+const engineORS  = document.getElementById('engineORS')  as HTMLInputElement;
+const engineNote = document.getElementById('engineNote') as HTMLParagraphElement;
+const orsKeyInput = document.getElementById('orsKey') as HTMLInputElement;
 
 // ===== ORS key (optional) from Vite env; if not set, we stick with OSRM =====
-const ORS_KEY: string = (import.meta as any).env?.VITE_ORS_KEY ?? '';
+// const ORS_KEY: string = (import.meta as any).env?.VITE_ORS_KEY ?? '';
 
 // ===== Map =====
 const map = L.map('map');
+
+// ===== Map related thingies =====
 const routePane = map.createPane('routePane');
 routePane.style.zIndex = '450'
 const kmPane = map.createPane('kmPane');
@@ -72,6 +63,149 @@ if ('geolocation' in navigator) {
   );
 }
 
+// ===== Leaflet UI thingies =====
+map.zoomControl?.remove();
+const zoomCtl = L.control.zoom({ position: 'bottomleft' }).addTo(map);
+const zc = zoomCtl.getContainer();
+
+// gps button
+const gpsBtn = L.DomUtil.create('a', 'leaflet-control-gps', zc);
+gpsBtn.href = '#'; gpsBtn.title = 'Use my location'; gpsBtn.innerHTML = '⌖';
+L.DomEvent.on(gpsBtn, 'click', (e: Event) => {
+  L.DomEvent.stop(e);
+  if (!('geolocation' in navigator)) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => map.flyTo([pos.coords.latitude, pos.coords.longitude], Math.max(map.getZoom(), 14)),
+    () => {},
+    { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+  )
+})
+zc?.insertBefore(gpsBtn, zc.firstChild);
+
+// undo button
+const undoBtn = L.Control.extend({
+  options: { position: 'bottomleft' as L.ControlPosition },
+  onAdd: () => {
+    const bar = L.DomUtil.create('div', 'leaflet-bar');
+    const a = L.DomUtil.create('a', 'leaflet-control-undo', bar);
+    a.href = '#';
+    a.title = 'Undo last waypoint';
+    a.setAttribute('aria-label', 'Undo last waypoint');
+    a.innerHTML = '↶';
+
+    L.DomEvent.on(a, 'click', (e: Event) => {
+      L.DomEvent.stop(e);
+      if (!waypoints.length) return;
+      waypoints.pop();
+      const m = markers.pop(); if (m) map.removeLayer(m);
+      refreshLabels?.();
+      renderRoute();
+    });
+
+    // prevent map drag when tapping the control
+    L.DomEvent.disableClickPropagation(bar);
+    return bar;
+  }
+});
+new undoBtn().addTo(map);
+
+// routing profile control
+// function addBottomCenterProfileBar(map: L.Map){
+//   const el = L.DomUtil.create('div', 'leaflet-control leaflet-bar profile-center');
+//   el.innerHTML = `
+//     <a href="#" id="footBtn" aria-disabled="true" title="Foot">👟</a>
+//     <a href="#" id="bikeBtn" aria-disabled="true" title="Bike">🚴</a>
+//     <a href="#" id="carBtn"  aria-pressed="true" title="Car">🚗</a>
+//   `;
+
+//   // Position it in the map container (not in a corner)
+//   const container = map.getContainer();
+//   el.style.position = 'absolute';
+//   el.style.left = '50%';
+//   el.style.bottom = 'max(10px, env(safe-area-inset-bottom))';
+//   el.style.transform = 'translateX(-50%)';
+//   el.style.zIndex = '800';
+
+//   container.appendChild(el);
+//   L.DomEvent.disableClickPropagation(el); // don’t drag the map when tapping it
+
+//   // Wire buttons (lock to car for now)
+//   const carBtn  = el.querySelector('#carBtn')  as HTMLAnchorElement;
+//   const footBtn = el.querySelector('#footBtn') as HTMLAnchorElement;
+//   const bikeBtn = el.querySelector('#bikeBtn') as HTMLAnchorElement;
+
+//   footBtn.onclick = (e) => { e.preventDefault(); /* disabled for now */ };
+//   bikeBtn.onclick = (e) => { e.preventDefault(); /* disabled for now */ };
+//   carBtn.onclick  = (e) => { e.preventDefault(); /* already active */ };
+
+//   return el;
+// }
+
+// // Call once after the map is created:
+// addBottomCenterProfileBar(map);
+
+
+
+// setting toggle
+const SettingsToggle = L.Control.extend({
+  onAdd() {
+    const wrap = L.DomUtil.create('div', 'leaflet-control settings-toggle leaflet-bar');
+    const btn  = L.DomUtil.create('a', '', wrap);
+    btn.href = '#';
+    btn.title = 'Settings';
+    btn.setAttribute('aria-label','Settings');
+    btn.textContent = '🧰';
+    L.DomEvent.on(btn, 'click', (e: Event) => {
+      L.DomEvent.stop(e);
+      settingsPanel.classList.toggle('hidden');
+    });
+    L.DomEvent.disableClickPropagation(wrap);
+    return wrap;
+  }
+});
+new SettingsToggle({ position: 'bottomright' }).addTo(map);
+
+// Close when tapping the map
+map.on('click', () => settingsPanel.classList.add('hidden'));
+
+// stats and distance
+const StatsControl = L.Control.extend({
+  onAdd() {
+    const el = L.DomUtil.create('div', 'panel stats');
+    el.innerHTML = `
+      <div><strong>Elev:</strong> <span id="elevVal">-</span></div>
+      <div><strong>ETA:</strong> <span id="etaVal">-</span></div>
+      <div><strong>kcal:</strong> <span id="calVal">-</span></div>
+    `;
+    // prevent map from panning when dragging on the panel
+    L.DomEvent.disableClickPropagation(el);
+    return el;
+  },
+  onRemove() {}
+});
+
+const DistanceControl = L.Control.extend({
+  onAdd() {
+    const el = L.DomUtil.create('div', 'panel distance');
+    el.innerHTML = `
+    <span id="distanceVal">-</span>
+    `;
+    L.DomEvent.disableClickPropagation(el);
+    return el;
+  },
+  onRemove() {}
+});
+
+const statsCtl = new StatsControl({ position: 'topleft' }).addTo(map);
+const distCtl = new DistanceControl({ position: 'topright' }).addTo(map);
+
+// Re-grab refs after control is created:
+const elevVal = document.getElementById('elevVal') as HTMLSpanElement;
+const etaVal  = document.getElementById('etaVal') as HTMLSpanElement;
+const calVal  = document.getElementById('calVal') as HTMLSpanElement;
+const distanceV = document.getElementById('distanceVal') as HTMLSpanElement;
+
+
 // ===== State =====
 const waypoints: LonLat[] = [];
 const markers: L.Marker[] = [];
@@ -79,6 +213,33 @@ const kmLayer = L.layerGroup().addTo(map);
 let routeLayer: L.Polyline | null = null;
 let baseDistanceM = 0;                      // meters (one pass)
 let lastRouteLatLngs: [number, number][] = []; // [lat, lon]
+let orsDegraded = false; 
+
+// Persist ORS key in localStorage
+orsKeyInput.value = localStorage.getItem('ors_key') ?? '';
+orsKeyInput.addEventListener('input', () => {
+  localStorage.setItem('ors_key', orsKeyInput.value.trim());
+  orsDegraded = false;   // new key → retry allowed
+  updateEngineAvailability();
+});
+
+// ------------ Engine gating ------------
+function getOrsKey(): string { return (orsKeyInput.value || '').trim(); }
+function updateEngineAvailability() {
+  const hasKey = !!getOrsKey();
+  if (!hasKey || orsDegraded) {
+    engineORS.checked = false;
+    engineORS.disabled = true;
+    engineOSRM.checked = true;
+    engineNote.textContent = hasKey
+      ? 'ORS temporarily disabled due to rate limit/error; using OSRM (driving).'
+      : 'Set an ORS key to enable ORS.';
+  } else {
+    engineORS.disabled = false;
+    engineNote.textContent = 'ORS enabled. Using snap + foot-walking when selected.';
+  }
+}
+updateEngineAvailability();
 
 
 // ===== Helpers =====
@@ -232,22 +393,36 @@ async function osrmDriving(coords: LonLat[]){
   const r = data.routes?.[0]; if (!r) throw new Error('OSRM: no route');
   return { geometry: r.geometry.coordinates as LonLat[], distance: r.distance as number };
 }
-async function orsDriving(coords: LonLat[]){
-  if (!ORS_KEY) throw new Error('ORS key missing');
-  const url = `https://api.openrouteservice.org/v2/directions/driving-car/geojson`;
-  const res = await fetch(url, {
-    method:'POST', headers:{'Authorization': ORS_KEY, 'Content-Type':'application/json'},
-    body: JSON.stringify({ coordinates: coords })
+
+async function orsDirectionsFoot(coords: LonLat[]) {
+  const key = getOrsKey();
+  if (!key) { orsDegraded = true; updateEngineAvailability(); throw new Error('ORS key missing'); }
+  const res = await fetch('https://api.openrouteservice.org/v2/directions/foot-walking/geojson', {
+    method: 'POST',
+    headers: { 'Authorization': key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ coordinates: coords }),
   });
-  if (!res.ok) throw new Error(`ORS HTTP ${res.status}`);
+  if (!res.ok) { if ([401,403,429].includes(res.status)) { orsDegraded = true; updateEngineAvailability(); } throw new Error('ORS HTTP ' + res.status); }
   const data = await res.json();
   const feat = data.features?.[0]; if (!feat) throw new Error('ORS: no route');
-  const summary = feat.properties.summary as { distance:number, duration:number };
-  return { geometry: feat.geometry.coordinates as LonLat[], distance: summary.distance };
+  const geometry = feat.geometry.coordinates as LonLat[];
+  const summary  = feat.properties.summary as { distance: number, duration: number };
+  return { geometry, distance: summary.distance, duration: summary.duration };
 }
+
 async function getRoute(coords: LonLat[]){
-  try { return await osrmDriving(coords); }
-  catch { if (ORS_KEY) return await orsDriving(coords); throw new Error('Routing failed'); }
+  const wantORS = engineORS.checked && !orsDegraded && !!getOrsKey();
+  if (wantORS) {
+    try {
+      return await orsDirectionsFoot(coords);
+    } catch {
+      // fallback + gate ORS until key changes
+      return await osrmDriving(coords);
+    }
+  }
+  return await osrmDriving(coords);
+  // try { return await osrmDriving(coords); }
+  // catch { if (ORS_KEY) return await orsDriving(coords); throw new Error('Routing failed'); }
 }
 
 // ===== Routing & stats =====
@@ -319,13 +494,7 @@ function addWaypoint(lat:number, lon:number){
   refreshLabels();
   renderRoute(); // auto-calc
 }
-function undoLast(){
-  if (!waypoints.length) return;
-  waypoints.pop();
-  const m = markers.pop(); if (m) map.removeLayer(m);
-  refreshLabels();
-  renderRoute(); // auto-calc
-}
+
 function clearAll(){
   waypoints.length = 0;
   markers.forEach(m=>map.removeLayer(m));
@@ -353,33 +522,13 @@ map.on('click', (e: L.LeafletMouseEvent) => {
   addWaypoint(e.latlng.lat, e.latlng.lng);
 });
 
-
-undoFab.addEventListener('click', undoLast);
-
-// Bracketed tools
-locBtn.addEventListener('click', () => {
-  if (!('geolocation' in navigator)) return;
-  navigator.geolocation.getCurrentPosition(
-    (pos) => map.flyTo([pos.coords.latitude, pos.coords.longitude], Math.max(map.getZoom(), 14)),
-    () => {}
-  );
-});
-zoomInBtn.addEventListener('click', () => map.zoomIn());
-zoomOutBtn.addEventListener('click', () => map.zoomOut());
-
 // Settings toggle (on/off)
 function setSettings(open: boolean){
   settingsPanel.classList.toggle('hidden', !open);
-  settingsBtn.setAttribute('aria-expanded', String(open));
 }
-settingsBtn.addEventListener('click', () => {
-  const willOpen = settingsPanel.classList.contains('hidden');
-  setSettings(willOpen);
-});
 settingsClose.addEventListener('click', () => setSettings(false));
 
 // Settings actions
-undoMenuBtn.addEventListener('click', undoLast);
 clearBtn.addEventListener('click', clearAll);
 reverseBtn.addEventListener('click', reverseRoute);
 loopChk.addEventListener('change', renderRoute);
@@ -387,11 +536,6 @@ loopChk.addEventListener('change', renderRoute);
 // Target inputs → recompute dependent stats
 targetPaceI.addEventListener('input', () => renderRoute());
 targetWeightI.addEventListener('input', () => renderRoute());
-
-// Bottom-center profile bar (icons; locked to car)
-footBtn.addEventListener('click', () => {/* disabled */});
-bikeBtn.addEventListener('click', () => {/* disabled */});
-carBtn .addEventListener('click', () => {/* already active */});
 
 // save the route to gpx
 saveGpxBtn.addEventListener('click', async () => {

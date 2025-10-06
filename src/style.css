@@ -28,61 +28,6 @@ body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,
   font-variant-numeric:tabular-nums;
 }
 
-/* Bottom-left: tools bracket + undo */
-/* Bottom-left container */
-#leftTools{
-  position: fixed;
-  left: env(safe-area-inset-left,14px);
-  bottom: env(safe-area-inset-bottom,14px);
-  z-index: 110;                 /* a bit higher to be safe */
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-/* IMPORTANT: don't let .panel's "position: fixed" leak into the bracket */
-#leftTools .panel.tools{
-  position: static;             /* overrides .panel's fixed */
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 0;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-/* Each tool in the bracket: 44x44 rows with separators */
-#leftTools .panel.tools .btn-square{
-  display: block;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  background: #0e1530;
-  color: var(--fg);
-  font-size: 18px;
-  line-height: 44px;
-  text-align: center;
-  cursor: pointer;
-  box-shadow: 0 8px 24px rgba(0,0,0,.4);
-}
-#leftTools .panel.tools .btn-square:last-child{ border-bottom: 0; }
-
-/* Undo matches the footprint and sits under the bracket */
-#leftTools .btn-square.undo{
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: #0e1530;
-  color: var(--fg);
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 44px;
-  text-align: center;
-  box-shadow: 0 8px 24px rgba(0,0,0,.4);
-}
 
 /* Undo button matches the same footprint and aligns under the bracket */
 .btn-square.undo{
@@ -136,14 +81,13 @@ button[disabled], .chip.disabled{opacity:.6;cursor:not-allowed}
 .chip.active{border-color:var(--accent)}
 .row.profiles{grid-template-columns:repeat(3,auto)}
 
-/* Bottom-center profile bar with icons */
-#profileBar{
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: env(safe-area-inset-bottom,14px);
-  z-index: 11;
+/* Optional: keep engine radios tidy inside the sheet */
+#panel .row .check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
 
 /* Horizontal tools bracket (same visual system as left tools) */
 .panel.tools.horizontal{
@@ -198,8 +142,93 @@ button[disabled], .chip.disabled{opacity:.6;cursor:not-allowed}
     0 0 6px rgba(0,0,0,.25);
   pointer-events: none; 
 }
+/* 1) Lift BOTH bottom corners (left & right) by a common offset */
+.leaflet-control-container .leaflet-bottom {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+}
+
+/* 2) Pin the attribution to the very bottom so it no longer shifts other controls */
+.leaflet-control-attribution {
+  position: fixed !important;
+  right: max(0px, env(safe-area-inset-right));
+  bottom: max(0px, env(safe-area-inset-bottom));
+  margin: 0 !important;
+  background: rgba(255,255,255,.9);
+  color: #000;
+  border-radius: 4px;
+  padding: 2px 6px;
+  line-height: 1.2;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  z-index: 1000;                        /* above map, below your panels */
+  pointer-events: auto;                 /* links still clickable */
+}
+
+/* (nice-to-have) tidy the prefix text */
+.leaflet-control-attribution .leaflet-control-attribution-link { display: none; }
+
+.leaflet-bar a.leaflet-control-undo,
+.leaflet-bar a.leaflet-control-gps{
+  display:block;
+  text-align:center;
+  text-decoration:none;
+  background:#fff;
+  color:#000;
+  font-size:18px;
+}
+.leaflet-bar a.leaflet-control-undo:hover,
+.leaflet-bar a.leaflet-control-gps:hover{ background:#f4f4f4; }
 
 
+/* Use Leaflet's "bar" look */
+.leaflet-control.settings-toggle.leaflet-bar,
+.leaflet-control.settings-toggle .leaflet-bar{
+  background:#fff;
+  border-radius:4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  overflow:hidden;
+}
+
+/* The actual button */
+.leaflet-control.settings-toggle a{
+  display:block;
+  text-align:center;
+  text-decoration:none;
+  color:#000;
+  font-size:18px;
+}
+.leaflet-control.settings-toggle a:hover{ background:#f4f4f4; }
+.leaflet-control.settings-toggle a:active{ transform: translateY(1px); }
+
+/* Bottom-center horizontal pill that matches Leaflet style */
+.leaflet-control.profile-center{
+  display:flex;
+  gap:0;              /* seamless bar */
+  border-radius:4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  overflow:hidden;
+  background:#fff;
+  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px)
+}
+
+/* Buttons inside the bar */
+.leaflet-control.profile-center a{
+  display:inline-block;
+  text-align:center;
+  text-decoration:none;
+  color:#000;
+  font-size:18px;
+  border-right:1px solid rgba(0,0,0,.12);
+}
+.leaflet-control.profile-center a:last-child{ border-right:none; }
+.leaflet-control.profile-center a:hover{ background:#f4f4f4; }
+.leaflet-control.profile-center a[aria-pressed="true"]{
+  background:#f0f0f0;
+  font-weight:600;
+}
+.leaflet-control.profile-center a[aria-disabled="true"]{
+  opacity:.45;
+  pointer-events:none;
+}
 
 
 @media (max-width:640px){
