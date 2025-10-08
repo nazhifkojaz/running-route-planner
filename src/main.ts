@@ -13,6 +13,22 @@ import './style.css';
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, shadowUrl: markerShadow });
 
+function readHashParam(key: string): string | null {
+  const h = location.hash.startsWith('#') ? location.hash.slice(1) : location.hash;
+  const params = new URLSearchParams(h);
+  return params.get(key);
+}
+
+const sessionFromHash = readHashParam('session');
+if (sessionFromHash) {
+  localStorage.setItem('session_token', sessionFromHash);
+  // optional: clean hash (but keep other states if you use any)
+  const params = new URLSearchParams(location.hash.slice(1));
+  params.delete('session');
+  history.replaceState(null, '', location.pathname + (location.search || '') + (params.size ? '#' + params.toString() : ''));
+}
+
+
 type LonLat = [number, number]; // [lon, lat]
 
 
@@ -36,6 +52,13 @@ const engineOSRM = document.getElementById('engineOSRM') as HTMLInputElement;
 const engineORS  = document.getElementById('engineORS')  as HTMLInputElement;
 const engineNote = document.getElementById('engineNote') as HTMLParagraphElement;
 const orsKeyInput = document.getElementById('orsKey') as HTMLInputElement;
+
+// === Panel refs (existing HTML) ===
+const userPanel   = document.getElementById('userPanel') as HTMLDivElement;
+const userClose   = document.getElementById('userClose') as HTMLButtonElement;
+const userContent = document.getElementById('userContent') as HTMLDivElement;
+
+const backdrop = document.getElementById('sheetBackdrop') as HTMLDivElement;
 
 // ===== ORS key (optional) from Vite env; if not set, we stick with OSRM =====
 // const ORS_KEY: string = (import.meta as any).env?.VITE_ORS_KEY ?? '';
@@ -188,7 +211,7 @@ const DistanceControl = L.Control.extend({
   onAdd() {
     const el = L.DomUtil.create('div', 'panel distance');
     el.innerHTML = `
-    <span id="distanceVal">-</span>
+    <span id="distanceVal">0 Km</span>
     `;
     L.DomEvent.disableClickPropagation(el);
     return el;
@@ -241,9 +264,159 @@ function updateEngineAvailability() {
 }
 updateEngineAvailability();
 
+// === API base (reuse your existing) ===
+const API_BASE = 'https://running-route-planner.vercel.app';
+
+type MeResp = {
+  connected: boolean;
+  strava_athlete_id?: number;
+  username?: string | null;
+  weight_kg?: number | null;
+  run_count_all?: number | null;
+  run_distance_all_m?: number | null;
+  avg_pace_5_sec_per_km?: number | null;
+  avg_hr_5?: number | null;
+};
+
+function authHeaders(): HeadersInit {
+  const t = localStorage.getItem('session_token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+async function apiMe() {
+  const res = await fetch(`${API_BASE}/me`, {
+    headers: authHeaders(),
+    // credentials no longer required, but harmless to keep:
+    // credentials: 'include',
+  });
+  if (!res.ok) throw new Error(`ME ${res.status}`);
+  return res.json();
+}
+
+async function apiSync() {
+  const res = await fetch(`${API_BASE}/me/sync`, {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    // credentials: 'include',
+  });
+  if (!res.ok) throw new Error(`SYNC ${res.status}`);
+  return res.json();
+}
+
+function stravaStartUrl(): string {
+  const redirect = `${location.origin}${location.pathname}`;
+  return `${API_BASE}/auth/strava/start?redirect=${encodeURIComponent(redirect)}`;
+}
+
+
+backdrop.addEventListener('click', closeUserPanel);
+map.on('click', closeUserPanel);
+
+
+// Simple renderers (adjust as you like)
+function renderLoggedOut() {
+  userContent.innerHTML = `
+    <p>Connect your Strava account to personalize pace/HR estimates and show your stats.</p>
+    <div class="account-actions">
+      <button id="connectStrava" class="primary">Connect Strava</button>
+      <span class="muted">You'll be redirected to Strava to authorize.</span>
+    </div>`;
+  document.getElementById('connectStrava')?.addEventListener('click', () => {
+    location.href = stravaStartUrl();
+  });
+}
+
+function renderLoggedIn(me: MeResp) {
+  userContent.innerHTML = `
+    <div class="kv"><span>Name</span><strong> : ${me.username ?? '-'}</strong></div>
+    <div class="kv"><span>Athlete ID</span><strong> : ${me.strava_athlete_id ?? '-'}</strong></div>
+    <div class="kv"><span>Weight</span><strong> : ${me.weight_kg ? me.weight_kg + ' kg' : '-'}</strong></div>
+    <div class="kv"><span>Runs (all-time)</span><strong> : ${me.run_count_all ?? '-'}</strong></div>
+    <div class="kv"><span>Distance (all-time)</span><strong> : ${fmtKmBare(me.run_distance_all_m)}</strong></div>
+    <div class="kv"><span>Avg pace (last 5)</span><strong> : ${paceSecToStr(me.avg_pace_5_sec_per_km)}</strong></div>
+    <div class="kv"><span>Avg HR (last 5)</span><strong> : ${me.avg_hr_5 ?? '-'}</strong></div>
+    <div class="account-actions">
+      <button id="syncStrava" class="primary">Sync latest</button>
+    </div>`;
+  document.getElementById('syncStrava')?.addEventListener('click', async (ev) => {
+    const btn = ev.currentTarget as HTMLButtonElement;
+    btn.disabled = true;
+    try { renderLoggedIn(await apiSync()); }
+    finally { btn.disabled = false; }
+  });
+}
+
+async function openUserPanel() {
+  userContent.innerHTML = `<p class="muted small">Loading…</p>`;
+  userPanel.classList.remove('hidden');
+  backdrop.classList.remove('hidden');
+  try {
+    const me = await apiMe();
+    _accountCtl?.setIcon(!!me.connected);
+    me.connected ? renderLoggedIn(me) : renderLoggedOut();
+  } catch {
+    userContent.innerHTML = `<p class="muted">Could not reach the server.</p>`;
+  }
+}
+
+function closeUserPanel() {
+  userPanel.classList.add('hidden');
+  backdrop.classList.add('hidden');
+}
+
+userClose?.addEventListener('click', closeUserPanel);
+
+// Close the sheet when clicking the map (nice on mobile)
+map.on('click', closeUserPanel);
+
+// === Leaflet control (bottom-right) that toggles the panel ===
+class AccountControl extends L.Control {
+  private btn!: HTMLAnchorElement;
+  onAdd() {
+    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+    this.btn = L.DomUtil.create('a', 'account-btn', container) as HTMLAnchorElement;
+    this.btn.href = '#';
+    this.btn.title = 'Account';
+    this.btn.textContent = '🪑'; // default until we know
+    L.DomEvent.on(this.btn, 'click', L.DomEvent.stopPropagation)
+              .on(this.btn, 'click', L.DomEvent.preventDefault)
+              .on(this.btn, 'click', () => {
+                if (userPanel.classList.contains('hidden')) openUserPanel();
+                else closeUserPanel();
+              });
+    return container;
+  }
+  setIcon(connected: boolean) {
+    if (this.btn) this.btn.textContent = connected ? '👟' : '🪑';
+  }
+}
+let _accountCtl = (new AccountControl({ position: 'bottomright' })).addTo(map) as AccountControl;
+
+// Set initial icon state & optional auto-sync when returning from Strava
+apiMe()
+  .then(me => _accountCtl.setIcon(!!me.connected))
+  .catch(() => { /* keep default */ });
+
+if (location.hash.includes('connected=strava')) {
+  apiSync()
+    .catch(() => {})
+    .finally(async () => {
+      try { _accountCtl.setIcon(!!(await apiMe()).connected); } catch {}
+      // Optional: history.replaceState(null, '', location.pathname + location.search);
+    });
+}
+
 
 // ===== Helpers =====
-function fmtKmBare(m: number){ return (m / 1000).toFixed(2) + ' km'; }
+function paceSecToStr(sec?: number | null): string {
+  if (!sec || sec <= 0) return '-';
+  const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+  return `${m}:${String(s).padStart(2,'0')}/km`;
+}
+function fmtKmBare(m: number | null | undefined){
+  if (!m) return '0 Km';
+  return (m / 1000).toFixed(2) + ' Km'; 
+}
 function fmtHMS(totalSeconds: number){
   const s = Math.max(0, Math.round(totalSeconds));
   const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
@@ -430,7 +603,7 @@ async function renderRoute(){
   clearRouteLayer();
   baseDistanceM = 0;
   elevVal.textContent = etaVal.textContent = calVal.textContent = '-';
-  distanceV.textContent = '-';
+  distanceV.textContent = '0 Km';
 
   if (waypoints.length < 2){ kmLayer.clearLayers(); saveGpxBtn.disabled = true; return; }
 
@@ -501,7 +674,7 @@ function clearAll(){
   markers.length = 0;
   clearRouteLayer();
   elevVal.textContent = etaVal.textContent = calVal.textContent = '-';
-  distanceV.textContent = '-';
+  distanceV.textContent = '0 Km';
   kmLayer.clearLayers();
   saveGpxBtn.disabled = true;
 }

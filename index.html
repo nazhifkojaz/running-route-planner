@@ -10,6 +10,17 @@
   </head>
   <body>
 
+    <!-- Account panel (stays in HTML) -->
+    <div id="userPanel" class="panel sheet hidden" role="dialog" aria-modal="true" aria-labelledby="userPanelTitle">
+      <div class="handle" aria-hidden="true"></div>
+      <div class="sheet-header">
+        <h3 id="userPanelTitle">Account</h3>
+        <button id="userClose" class="icon-btn" title="Close">✕</button>
+      </div>
+      <div id="userContent" class="account-content"><p class="muted small">Loading…</p></div>
+    </div>
+
+
     <div
       id="settingsPanel"
       class="panel settings hidden"
@@ -91,7 +102,8 @@
 </section>
 
     </div>
-
+    
+    <div id="sheetBackdrop" class="hidden"></div>
     <!-- Map -->
     <div id="map"></div>
 
