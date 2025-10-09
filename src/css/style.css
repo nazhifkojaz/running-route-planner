@@ -1,0 +1,348 @@
+/* ===== CSS Variables ===== */
+:root {
+  --bg: #0b1020;
+  --panel: #0b1222;
+  --line: #1f2640;
+  --fg: #e2e8f0;
+  --muted: #9fb0d3;
+  --accent: #38bdf8;
+  --danger: #ef4444;
+}
+
+/* ===== Base Styles ===== */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* ===== Map ===== */
+#map {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+}
+
+/* ===== Generic Panel ===== */
+.panel {
+  position: fixed;
+  z-index: 10;
+  background: rgba(11, 18, 34, 0.75);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.panel .small {
+  font-size: 12px;
+}
+
+.panel .muted {
+  color: var(--muted);
+}
+
+/* ===== Stats Panel (top-left) ===== */
+.panel.stats {
+  top: max(10px, env(safe-area-inset-top));
+  left: max(10px, env(safe-area-inset-left));
+  padding: 10px 12px;
+  min-width: 100px;
+  font-size: 14px;
+}
+
+.panel.stats strong {
+  font-weight: 600;
+}
+
+/* ===== Distance Panel (top-right) ===== */
+.panel.distance {
+  top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
+  padding: 10px 12px;
+  min-width: 50px;
+  font-size: 42px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Settings Panel (bottom-right) ===== */
+.panel.settings {
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 60px);
+  width: min(460px, 92vw);
+  padding: 12px;
+}
+
+.panel.settings.hidden {
+  display: none;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.icon-btn {
+  border: 1px solid var(--line);
+  background: #0e1530;
+  color: var(--fg);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* ===== Settings Sections ===== */
+section {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+section:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+h3, h4 {
+  margin: 6px 2px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field input {
+  background: #0e1530;
+  border: 1px solid #23305e;
+  color: var(--fg);
+  padding: 10px;
+  border-radius: 10px;
+  outline: none;
+}
+
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+.check {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+button {
+  border: 1px solid var(--line);
+  background: #0e1530;
+  color: var(--fg);
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+button:hover {
+  background: #1a2140;
+}
+
+button.danger {
+  border-color: #6b1f2d;
+  background: #2b0e16;
+  color: #ffd7dc;
+}
+
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== User Panel (Centered Sheet) ===== */
+#sheetBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 12;
+}
+
+#sheetBackdrop.hidden {
+  display: none;
+}
+
+#userPanel.panel {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, 92vw);
+  padding: 14px;
+  z-index: 13;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.kv:last-of-type {
+  border-bottom: 0;
+}
+
+.account-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+button.primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+button.primary:hover {
+  background: #0ea5e9;
+}
+
+/* ===== Leaflet Controls ===== */
+.leaflet-bar a.leaflet-control-undo,
+.leaflet-bar a.leaflet-control-gps {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  background: #fff;
+  color: #000;
+  font-size: 18px;
+}
+
+.leaflet-bar a.leaflet-control-undo:hover,
+.leaflet-bar a.leaflet-control-gps:hover {
+  background: #f4f4f4;
+}
+
+.leaflet-control.settings-toggle.leaflet-bar {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.leaflet-control.settings-toggle a {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  color: #000;
+  font-size: 18px;
+}
+
+.leaflet-control.settings-toggle a:hover {
+  background: #f4f4f4;
+}
+
+.leaflet-bar .account-btn {
+  display: block;
+  text-align: center;
+  font-size: 18px;
+  text-decoration: none;
+  color: #000;
+}
+
+.leaflet-bar .search-btn {
+  display: block;
+  text-align: center;
+  font-size: 18px;
+  text-decoration: none;
+  color: #000;
+}
+
+
+/* ===== Kilometer Labels ===== */
+.km-anchor {
+  /* Invisible anchor for km markers */
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-tooltip.km-tip {
+  background: rgba(255, 255, 255, 0.96);
+  color: #111;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  text-shadow: 
+    0 0 2px rgba(0, 0, 0, 0.25),
+    0 0 6px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* Remove default arrow */
+.leaflet-tooltip.km-tip::before {
+  display: none;
+}
+
+/* ===== Leaflet Layout Fixes ===== */
+.leaflet-control-container .leaflet-bottom {
+  bottom: calc(max(0px, env(safe-area-inset-bottom)) + 20px);
+}
+
+.leaflet-control-attribution {
+  position: fixed !important;
+  right: max(0px, env(safe-area-inset-right));
+  bottom: max(0px, env(safe-area-inset-bottom));
+  margin: 0 !important;
+  background: rgba(255, 255, 255, 0.9);
+  color: #000;
+  border-radius: 4px;
+  padding: 2px 6px;
+  line-height: 1.2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  pointer-events: auto;
+  font-size: 11px;
+}
+
+.leaflet-bottom .leaflet-control {
+  margin-bottom: max(8px, env(safe-area-inset-bottom));
+}
+
+.leaflet-right .leaflet-control {
+  margin-right: max(8px, env(safe-area-inset-right));
+}
+
+/* ===== Utility Classes ===== */
+.hidden {
+  display: none;
+}
