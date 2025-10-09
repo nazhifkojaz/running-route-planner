@@ -16,9 +16,9 @@ import {
   createUndoControl, 
   createSettingsControl,
   createStatsControls,
-  createAccountControl 
+  createAccountControl,
+  createSearchControl
 } from './controls';
-
 import { RouteManager } from './route';
 import { saveGPX, loadGPX } from './gpxManager';
 import { 
@@ -27,13 +27,16 @@ import {
   closeUserPanel, 
   initAccountIcon 
 } from './panels/userPanel';
-
 import { 
   createSettingsPanel,
-  openSettingsPanel,
   closeSettingsPanel 
 } from './panels/settingsPanel';
-
+import {
+  createSearchPanel,
+  openSearchPanel,
+  closeSearchPanel,
+  setupSearchPanel
+} from './panels/searchPanel';
 import { initAnalytics, trackEvent } from './analytics';
 
 // @ts-ignore
@@ -93,6 +96,7 @@ function setupEventHandlers(
   map.on('click', (e: L.LeafletMouseEvent) => {
     closeSettingsPanel(dom.settingsPanel);
     closeUserPanel(dom.userPanel, dom.backdrop);
+    closeSearchPanel(dom.searchPanel, dom.searchBackdrop);
     routeManager.addWaypoint(e.latlng.lat, e.latlng.lng);
   });
 
@@ -147,6 +151,7 @@ async function init() {
   // Create panels dynamically
   const settingsPanel = createSettingsPanel();
   const { panel: userPanel, content: userContent, backdrop } = createUserPanel();
+  const { panel: searchPanel, backdrop: searchBackdrop } = createSearchPanel();
 
   // Get DOM references after panels are created
   const dom = {
@@ -166,6 +171,8 @@ async function init() {
     orsKeyInput: document.getElementById('orsKey') as HTMLInputElement,
     userPanel,
     userContent,
+    searchPanel,
+    searchBackdrop,
     userClose: document.getElementById('userClose') as HTMLButtonElement,
     backdrop,
   };
@@ -208,11 +215,23 @@ async function init() {
     }
   });
   await initAccountIcon(accountControl);
+  
+  // Search control (above account button)
+  createSearchControl(map, () => {
+    if (searchPanel.classList.contains('hidden')) {
+      openSearchPanel(searchPanel, searchBackdrop);
+    } else {
+      closeSearchPanel(searchPanel, searchBackdrop);
+    }
+  });
+
+  // Setup search panel functionality
+  setupSearchPanel(map, searchPanel, searchBackdrop);
 
   // Event handlers
   setupEventHandlers(map, routeManager, accountControl, dom);
 
-  console.log('✅ Running Route Planner initialized');
+  console.log('Running Route Planner initialized');
 }
 
-init().catch(err => console.error('❌ Failed to initialize:', err));
+init().catch(err => console.error('Failed to initialize:', err));

@@ -11,7 +11,7 @@ export function createZoomControl(map: L.Map) {
   const gpsBtn = L.DomUtil.create('a', 'leaflet-control-gps', container);
   gpsBtn.href = '#';
   gpsBtn.title = 'Use my location';
-  gpsBtn.innerHTML = '⌖';
+  gpsBtn.innerHTML = '📍';
 
   L.DomEvent.on(gpsBtn, 'click', (e: Event) => {
     L.DomEvent.stop(e);
@@ -38,7 +38,7 @@ export function createUndoControl(map: L.Map, onUndo: () => void) {
       a.href = '#';
       a.title = 'Undo last waypoint';
       a.setAttribute('aria-label', 'Undo last waypoint');
-      a.innerHTML = '↶';
+      a.innerHTML = '⟲';
 
       L.DomEvent.on(a, 'click', (e: Event) => {
         L.DomEvent.stop(e);
@@ -140,4 +140,26 @@ export function createAccountControl(
 
   const control = new AccountControl({ position: 'bottomright' }).addTo(map);
   return control as any;
+}
+
+export function createSearchControl(
+  map: L.Map,
+  onToggle: () => void
+) {
+  class SearchControl extends L.Control {
+    onAdd() {
+      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+      const btn = L.DomUtil.create('a', 'search-btn', container) as HTMLAnchorElement;
+      btn.href = '#';
+      btn.title = 'Search Location';
+      btn.textContent = '🔎';
+
+      L.DomEvent.on(btn, 'click', L.DomEvent.stopPropagation)
+        .on(btn, 'click', L.DomEvent.preventDefault)
+        .on(btn, 'click', onToggle);
+      return container;
+    }
+  }
+
+  new SearchControl({ position: 'bottomright' }).addTo(map);
 }
