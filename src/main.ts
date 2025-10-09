@@ -4,7 +4,8 @@ import 'leaflet/dist/leaflet.css';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import './style.css';
+import './css/style.css';
+import './css/panels.css';
 
 // Modules
 import { CONFIG } from './config';
@@ -17,9 +18,22 @@ import {
   createStatsControls,
   createAccountControl 
 } from './controls';
+
 import { RouteManager } from './route';
 import { saveGPX, loadGPX } from './gpxManager';
-import { openUserPanel, closeUserPanel, initAccountIcon } from './userPanel';
+import { 
+  createUserPanel,
+  openUserPanel, 
+  closeUserPanel, 
+  initAccountIcon 
+} from './panels/userPanel';
+
+import { 
+  createSettingsPanel,
+  openSettingsPanel,
+  closeSettingsPanel 
+} from './panels/settingsPanel';
+
 import { initAnalytics, trackEvent } from './analytics';
 
 // @ts-ignore
@@ -29,28 +43,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   shadowUrl: markerShadow
 });
-
-// DOM references
-const dom = {
-  settingsPanel: document.getElementById('settingsPanel') as HTMLDivElement,
-  settingsClose: document.getElementById('settingsClose') as HTMLButtonElement,
-  clearBtn: document.getElementById('clearBtn') as HTMLButtonElement,
-  reverseBtn: document.getElementById('reverseBtn') as HTMLButtonElement,
-  saveGpxBtn: document.getElementById('saveGpxBtn') as HTMLButtonElement,
-  loadGpxBtn: document.getElementById('loadGpxBtn') as HTMLButtonElement,
-  loadGpxInput: document.getElementById('loadGpxInput') as HTMLInputElement,
-  loopChk: document.getElementById('loop') as HTMLInputElement,
-  targetPaceI: document.getElementById('targetPace') as HTMLInputElement,
-  targetWeightI: document.getElementById('targetWeight') as HTMLInputElement,
-  engineOSRM: document.getElementById('engineOSRM') as HTMLInputElement,
-  engineORS: document.getElementById('engineORS') as HTMLInputElement,
-  engineNote: document.getElementById('engineNote') as HTMLParagraphElement,
-  orsKeyInput: document.getElementById('orsKey') as HTMLInputElement,
-  userPanel: document.getElementById('userPanel') as HTMLDivElement,
-  userClose: document.getElementById('userClose') as HTMLButtonElement,
-  userContent: document.getElementById('userContent') as HTMLDivElement,
-  backdrop: document.getElementById('sheetBackdrop') as HTMLDivElement,
-};
 
 // Session management
 function handleHashSession() {
@@ -94,17 +86,19 @@ function initMap() {
 function setupEventHandlers(
   map: L.Map,
   routeManager: RouteManager,
+  accountControl: { setIcon: (connected: boolean) => void },
+  dom: any
 ) {
   // Map click - add waypoint
   map.on('click', (e: L.LeafletMouseEvent) => {
-    dom.settingsPanel.classList.add('hidden');
+    closeSettingsPanel(dom.settingsPanel);
     closeUserPanel(dom.userPanel, dom.backdrop);
     routeManager.addWaypoint(e.latlng.lat, e.latlng.lng);
   });
 
   // Settings
   dom.settingsClose.addEventListener('click', () => {
-    dom.settingsPanel.classList.add('hidden');
+    closeSettingsPanel(dom.settingsPanel);
   });
 
   // Route actions
@@ -150,6 +144,32 @@ async function init() {
 
   const { map, kmLayer } = initMap();
 
+  // Create panels dynamically
+  const settingsPanel = createSettingsPanel();
+  const { panel: userPanel, content: userContent, backdrop } = createUserPanel();
+
+  // Get DOM references after panels are created
+  const dom = {
+    settingsPanel,
+    settingsClose: document.getElementById('settingsClose') as HTMLButtonElement,
+    clearBtn: document.getElementById('clearBtn') as HTMLButtonElement,
+    reverseBtn: document.getElementById('reverseBtn') as HTMLButtonElement,
+    saveGpxBtn: document.getElementById('saveGpxBtn') as HTMLButtonElement,
+    loadGpxBtn: document.getElementById('loadGpxBtn') as HTMLButtonElement,
+    loadGpxInput: document.getElementById('loadGpxInput') as HTMLInputElement,
+    loopChk: document.getElementById('loop') as HTMLInputElement,
+    targetPaceI: document.getElementById('targetPace') as HTMLInputElement,
+    targetWeightI: document.getElementById('targetWeight') as HTMLInputElement,
+    engineOSRM: document.getElementById('engineOSRM') as HTMLInputElement,
+    engineORS: document.getElementById('engineORS') as HTMLInputElement,
+    engineNote: document.getElementById('engineNote') as HTMLParagraphElement,
+    orsKeyInput: document.getElementById('orsKey') as HTMLInputElement,
+    userPanel,
+    userContent,
+    userClose: document.getElementById('userClose') as HTMLButtonElement,
+    backdrop,
+  };
+
   // Routing service
   const routing = new RoutingService(
     dom.orsKeyInput,
@@ -177,22 +197,22 @@ async function init() {
   // Setup controls
   createZoomControl(map);
   createUndoControl(map, () => routeManager.undoLastWaypoint());
-  createSettingsControl(map, dom.settingsPanel);
+  createSettingsControl(map, settingsPanel);
 
   // Account control
   const accountControl = createAccountControl(map, () => {
-    if (dom.userPanel.classList.contains('hidden')) {
-      openUserPanel(dom.userPanel, dom.userContent, dom.backdrop, accountControl);
+    if (userPanel.classList.contains('hidden')) {
+      openUserPanel(userPanel, userContent, backdrop, accountControl);
     } else {
-      closeUserPanel(dom.userPanel, dom.backdrop);
+      closeUserPanel(userPanel, backdrop);
     }
   });
   await initAccountIcon(accountControl);
 
   // Event handlers
-  setupEventHandlers(map, routeManager);
+  setupEventHandlers(map, routeManager, accountControl, dom);
 
-  console.log('Running Route Planner initialized');
+  console.log('✅ Running Route Planner initialized');
 }
 
-init().catch(err => console.error('Failed to initialize:', err));
+init().catch(err => console.error('❌ Failed to initialize:', err));
