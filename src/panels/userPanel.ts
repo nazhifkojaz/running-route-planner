@@ -20,7 +20,7 @@ export function createUserPanel(): { panel: HTMLDivElement; content: HTMLDivElem
   panel.innerHTML = `
     <div class="panel-header">
       <div class="header-content">
-        <div class="icon-badge athlete-badge">🏃</div>
+        <div class="icon-badge athlete-badge">👟</div>
         <h3 id="userPanelTitle">Account</h3>
       </div>
       <button id="userClose" class="close-btn" title="Close" aria-label="Close">
