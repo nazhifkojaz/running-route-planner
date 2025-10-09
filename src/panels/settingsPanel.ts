@@ -80,7 +80,8 @@ export function createSettingsPanel(): HTMLDivElement {
         </div>
         <p class="hint-text">
           <span class="hint-icon">💡</span>
-          ETA & calories are estimates based on these values
+          ETA & calories are estimates based on these values.
+          If they are left blank, your Strava data (if connected) will be used.
         </p>
       </div>
 

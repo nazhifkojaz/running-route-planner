@@ -95,12 +95,12 @@ export class RouteManager {
     });
 
     // ETA
-    const pace = parsePaceSecPerKm(this.targetPaceI.value || '');
+    const pace = parsePaceSecPerKm(this.targetPaceI.value || '') || state.stravaPace || 0;
     const etaSec = pace ? (distance / 1000) * pace : null;
     this.stats.etaVal.textContent = pace && etaSec ? fmtHMS(etaSec) : '-';
 
     // Calories
-    const weight = Number(this.targetWeightI.value);
+    const weight = Number(this.targetWeightI.value) || state.stravaWeight || 0;
     if (pace && weight && etaSec) {
       const kcal = estimateKcalFromPaceWeight(distance, pace, weight);
       this.stats.calVal.textContent = Math.round(kcal).toString();

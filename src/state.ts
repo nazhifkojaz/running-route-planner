@@ -9,6 +9,9 @@ export class AppState {
   baseDistanceM = 0;
   lastRouteLatLngs: LatLng[] = [];
   orsDegraded = false;
+  stravaPace = 0;
+  stravaHR = 0;
+  stravaWeight = 0;
 
   clearRoute(map: L.Map) {
     if (this.routeLayer) {
@@ -29,6 +32,12 @@ export class AppState {
   reverseWaypoints() {
     this.waypoints.reverse();
     this.markers.reverse();
+  }
+
+  setStravaData(pace:number | null | undefined, hr: number | null | undefined, weight: number | null | undefined) {
+    this.stravaPace = pace || 0;
+    this.stravaHR = hr || 0;
+    this.stravaWeight = weight || 0;
   }
 }
 

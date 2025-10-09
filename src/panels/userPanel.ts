@@ -1,6 +1,7 @@
 import * as api from '../api';
 import { paceSecToStr, fmtKmBare } from '../utils';
 import type { MeResponse } from '../types';
+import { state } from '../state';
 
 
 export function createUserPanel(): { panel: HTMLDivElement; content: HTMLDivElement; backdrop: HTMLDivElement } {
@@ -54,7 +55,7 @@ function renderLoggedOut(userContent: HTMLDivElement) {
       </div>
       <div class="auth-content">
         <h4>Connect to Strava</h4>
-        <p>Link your Strava account to get personalized pace and heart rate estimates based on your running history.</p>
+        <p>Link your Strava account to get personalized estimation based on your running history.</p>
       </div>
       <button id="connectStrava" class="connect-btn">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -84,11 +85,11 @@ function renderLoggedIn(me: MeResponse, userContent: HTMLDivElement) {
       label: 'Total Distance', 
       value: fmtKmBare(me.run_distance_all_m)
     },
-    { 
-      icon: '⚖️', 
-      label: 'Weight', 
-      value: me.weight_kg ? `${me.weight_kg} kg` : '−'
-    },
+    // { 
+    //   icon: '⚖️', 
+    //   label: 'Weight', 
+    //   value: me.weight_kg ? `${me.weight_kg} kg` : '−'
+    // },
     { 
       icon: '⏱️', 
       label: 'Avg Pace (Last 5)', 
@@ -147,6 +148,7 @@ function renderLoggedIn(me: MeResponse, userContent: HTMLDivElement) {
     syncBtn.classList.add('syncing');
     try {
       const updated = await api.syncStrava();
+      state.setStravaData(updated.avg_pace_5_sec_per_km, updated.avg_hr_5, updated.weight_kg);
       renderLoggedIn(updated, userContent);
     } finally {
       syncBtn.disabled = false;
@@ -202,6 +204,7 @@ export async function initAccountIcon(
   try {
     const me = await api.getMe();
     accountControl.setIcon(!!me.connected);
+    state.setStravaData(me.avg_pace_5_sec_per_km, me.avg_hr_5, me.weight_kg);
   } catch {}
 
   if (location.hash.includes('connected=strava')) {
@@ -209,6 +212,7 @@ export async function initAccountIcon(
       await api.syncStrava();
       const me = await api.getMe();
       accountControl.setIcon(!!me.connected);
+      state.setStravaData(me.avg_pace_5_sec_per_km, me.avg_hr_5, me.weight_kg);
     } catch {}
   }
 }
