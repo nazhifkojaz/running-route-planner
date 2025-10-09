@@ -85,7 +85,7 @@ export function createSettingsPanel(): HTMLDivElement {
       </div>
 
       <!-- Routing Engine -->
-      <div class="setting-group">
+      <div class="setting-group hidden">
         <div class="group-header">
           <span class="group-icon">🚗</span>
           <h4>Routing Engine</h4>
@@ -119,7 +119,7 @@ export function createSettingsPanel(): HTMLDivElement {
       </div>
 
       <!-- ORS API Key -->
-      <div class="setting-group">
+      <div class="setting-group hidden">
         <div class="group-header">
           <span class="group-icon">🔑</span>
           <h4>ORS API Key</h4>
@@ -142,16 +142,16 @@ export function createSettingsPanel(): HTMLDivElement {
       <div class="setting-group">
         <div class="group-header">
           <span class="group-icon">📁</span>
-          <h4>GPX Files</h4>
+          <h4>Import/Export GPX</h4>
         </div>
         <div class="button-grid">
           <button id="saveGpxBtn" type="button" class="action-btn primary-btn" disabled>
             <span class="btn-icon">💾</span>
-            <span>Save GPX</span>
+            <span>Export GPX</span>
           </button>
           <button id="loadGpxBtn" type="button" class="action-btn">
             <span class="btn-icon">📂</span>
-            <span>Load GPX</span>
+            <span>Import GPX</span>
           </button>
         </div>
         <input id="loadGpxInput" type="file" accept=".gpx,application/gpx+xml" style="display:none" />
