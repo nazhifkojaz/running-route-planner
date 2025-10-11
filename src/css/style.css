@@ -276,14 +276,17 @@ button.primary:hover {
   color: #000;
 }
 
-.leaflet-bar .search-btn {
+.leaflet-bar .search-btn,
+.leaflet-bar .my-routes-btn,
+.leaflet-bar .explore-routes-btn,
+.leaflet-bar .save-route-btn,
+.leaflet-bar .markers-toggle-btn {
   display: block;
   text-align: center;
   font-size: 18px;
   text-decoration: none;
   color: #000;
 }
-
 
 /* ===== Kilometer Labels ===== */
 .km-anchor {

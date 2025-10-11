@@ -39,3 +39,80 @@ export interface AppState {
   lastRouteLatLngs: LatLng[];
   orsDegraded: boolean;
 }
+
+export interface GeoJSONGeometry {
+  type: 'LineString';
+  coordinates: [number, number][]; // [lon, lat][]
+  properties?: {
+    waypoints?: [number, number][]; // [lon, lat][]
+  };
+}
+
+export interface RouteCreateData {
+  name: string;
+  description?: string;
+  distance_m: number;
+  city?: string;
+  country?: string;
+  elevation_gain_m?: number;
+  elevation_loss_m?: number;
+  visibility: 'private' | 'public';
+  geometry?: GeoJSONGeometry;
+}
+
+export interface RouteUpdateData {
+  name?: string;
+  description?: string;
+  city?: string;
+  country?: string;
+  elevation_gain_m?: number;
+  elevation_loss_m?: number;
+  visibility?: 'private' | 'public';
+}
+
+export interface SavedRoute {
+  id: string;
+  user_id: string;
+  username_snapshot?: string;
+  name: string;
+  description?: string;
+  distance_m: number;
+  city?: string;
+  country?: string;
+  elevation_gain_m?: number;
+  elevation_loss_m?: number;
+  visibility: 'private' | 'public';
+  geometry?: GeoJSONGeometry;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RouteListItem {
+  id: string;
+  user_id: string;
+  username_snapshot?: string;
+  name: string;
+  description?: string;
+  distance_m: number;
+  city?: string;
+  country?: string;
+  elevation_gain_m?: number;
+  elevation_loss_m?: number;
+  visibility: 'private' | 'public';
+  has_geometry: boolean;
+  created_at: string;
+}
+
+export interface RoutesListResponse {
+  routes: RouteListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+export interface LocationInfo {
+  city?: string;
+  country?: string;
+  full_address?: string;
+}

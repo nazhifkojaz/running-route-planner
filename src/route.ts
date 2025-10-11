@@ -198,4 +198,72 @@ export class RouteManager {
     this.refreshLabels();
     this.renderRoute();
   }
+
+  async loadRouteFromData(
+    routeLatLngs: LatLng[],
+    waypoints: LatLng[],
+    distance_m: number,
+    elevation_gain_m?: number,
+    elevation_loss_m?: number
+  ) {
+    // Clear existing
+    this.clearAll();
+
+    // Set route data
+    state.lastRouteLatLngs = routeLatLngs.slice();
+    state.baseDistanceM = distance_m;
+
+    // Draw route polyline
+    state.routeLayer = L.polyline(routeLatLngs, {
+      weight: CONFIG.ROUTE_WEIGHT,
+      opacity: CONFIG.ROUTE_OPACITY,
+      pane: 'routePane'
+    }).addTo(this.map);
+
+    // Fit bounds
+    this.map.fitBounds(state.routeLayer.getBounds(), { padding: CONFIG.FIT_BOUNDS_PADDING });
+
+    // Add waypoint markers
+    waypoints.forEach(([lat, lon]) => {
+      const marker = L.marker([lat, lon], { draggable: true })
+        .on('dragend', (ev: L.LeafletEvent) => {
+          const ll = (ev.target as L.Marker).getLatLng();
+          const idx = state.markers.indexOf(ev.target as L.Marker);
+          if (idx >= 0) state.waypoints[idx] = [ll.lng, ll.lat];
+          this.renderRoute();
+        })
+        .addTo(this.map);
+      state.markers.push(marker);
+      state.waypoints.push([lon, lat]);
+    });
+    this.refreshLabels();
+
+    // Update stats
+    this.stats.distanceV.textContent = fmtKmBare(distance_m);
+
+    // Update elevation if available
+    if (elevation_gain_m !== undefined && elevation_loss_m !== undefined) {
+      this.stats.elevVal.textContent = `+${Math.round(elevation_gain_m)} / -${Math.round(elevation_loss_m)} m`;
+    } else {
+      this.stats.elevVal.textContent = '-';
+    }
+
+    // Update ETA and calories
+    const pace = parsePaceSecPerKm(this.targetPaceI.value || '');
+    const etaSec = pace ? (distance_m / 1000) * pace : null;
+    this.stats.etaVal.textContent = pace && etaSec ? fmtHMS(etaSec) : '-';
+
+    const weight = Number(this.targetWeightI.value);
+    if (pace && weight && etaSec) {
+      const kcal = estimateKcalFromPaceWeight(distance_m, pace, weight);
+      this.stats.calVal.textContent = Math.round(kcal).toString();
+    } else {
+      this.stats.calVal.textContent = '-';
+    }
+
+    // Add km labels
+    this.addKmLabels(routeLatLngs, distance_m);
+
+    this.saveGpxBtn.disabled = false;
+  }
 }

@@ -10,6 +10,7 @@ import './css/panels.css';
 // Modules
 import { CONFIG } from './config';
 import { readHashParam } from './utils';
+import { state } from './state';
 import { RoutingService } from './routing';
 import { 
   createZoomControl, 
@@ -17,7 +18,11 @@ import {
   createSettingsControl,
   createStatsControls,
   createAccountControl,
-  createSearchControl
+  createSearchControl,
+  createMarkersToggleControl,
+  createSaveRouteControl,
+  createMyRoutesControl,
+  createExploreRoutesControl
 } from './controls';
 import { RouteManager } from './route';
 import { saveGPX, loadGPX } from './gpxManager';
@@ -29,6 +34,7 @@ import {
 } from './panels/userPanel';
 import { 
   createSettingsPanel,
+  openSettingsPanel,
   closeSettingsPanel 
 } from './panels/settingsPanel';
 import {
@@ -37,8 +43,27 @@ import {
   closeSearchPanel,
   setupSearchPanel
 } from './panels/searchPanel';
+import {
+  createSaveRoutePanel,
+  openSaveRoutePanel,
+  closeSaveRoutePanel,
+  setupSaveRoutePanel
+} from './panels/saveRoutePanel';
+import {
+  createExplorePanel,
+  openExplorePanel,
+  closeExplorePanel,
+  setupExplorePanel
+} from './panels/explorePanel';
+import {
+  createMyRoutesPanel,
+  openMyRoutesPanel,
+  closeMyRoutesPanel,
+  setupMyRoutesPanel
+} from './panels/myRoutesPanel';
 import { initAnalytics, trackEvent } from './analytics';
 
+// Fix Leaflet marker icons
 // @ts-ignore
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -97,6 +122,9 @@ function setupEventHandlers(
     closeSettingsPanel(dom.settingsPanel);
     closeUserPanel(dom.userPanel, dom.backdrop);
     closeSearchPanel(dom.searchPanel, dom.searchBackdrop);
+    closeSaveRoutePanel(dom.saveRoutePanel, dom.saveRouteBackdrop);
+    closeExplorePanel(dom.explorePanel, dom.exploreBackdrop);
+    closeMyRoutesPanel(dom.myRoutesPanel, dom.myRoutesBackdrop);
     routeManager.addWaypoint(e.latlng.lat, e.latlng.lng);
   });
 
@@ -152,6 +180,9 @@ async function init() {
   const settingsPanel = createSettingsPanel();
   const { panel: userPanel, content: userContent, backdrop } = createUserPanel();
   const { panel: searchPanel, backdrop: searchBackdrop } = createSearchPanel();
+  const { panel: saveRoutePanel, backdrop: saveRouteBackdrop } = createSaveRoutePanel();
+  const { panel: explorePanel, backdrop: exploreBackdrop } = createExplorePanel();
+  const { panel: myRoutesPanel, backdrop: myRoutesBackdrop } = createMyRoutesPanel();
 
   // Get DOM references after panels are created
   const dom = {
@@ -171,10 +202,16 @@ async function init() {
     orsKeyInput: document.getElementById('orsKey') as HTMLInputElement,
     userPanel,
     userContent,
-    searchPanel,
-    searchBackdrop,
     userClose: document.getElementById('userClose') as HTMLButtonElement,
     backdrop,
+    searchPanel,
+    searchBackdrop,
+    saveRoutePanel,
+    saveRouteBackdrop,
+    explorePanel,
+    exploreBackdrop,
+    myRoutesPanel,
+    myRoutesBackdrop,
   };
 
   // Routing service
@@ -204,19 +241,73 @@ async function init() {
   // Setup controls
   createZoomControl(map);
   createUndoControl(map, () => routeManager.undoLastWaypoint());
+  
+  // Markers toggle control (bottom-left, above undo)
+  const markersToggle = createMarkersToggleControl(map, kmLayer, (visible) => {
+    // Toggle km markers
+    if (visible) {
+      kmLayer.addTo(map);
+    } else {
+      map.removeLayer(kmLayer);
+    }
+    
+    // Toggle waypoint markers
+    state.markers.forEach(marker => {
+      if (visible) {
+        marker.addTo(map);
+      } else {
+        map.removeLayer(marker);
+      }
+    });
+    
+    trackEvent('markers_toggled', { visible });
+  });
+
+  // Save Route control (bottom-left, above GPS)
+  createSaveRouteControl(map, () => {
+    if (!state.lastRouteLatLngs.length || state.baseDistanceM === 0) {
+      alert('No route to save. Please create a route first.');
+      return;
+    }
+
+    // Get elevation data
+    const elevText = stats.elevVal.textContent || '';
+    const elevMatch = elevText.match(/\+(\d+) \/ -(\d+) m/);
+    const elevation_gain_m = elevMatch ? parseFloat(elevMatch[1]) : undefined;
+    const elevation_loss_m = elevMatch ? parseFloat(elevMatch[2]) : undefined;
+
+    openSaveRoutePanel(saveRoutePanel, saveRouteBackdrop, {
+      distance_m: state.baseDistanceM,
+      elevation_gain_m,
+      elevation_loss_m
+    });
+  });
+  
   createSettingsControl(map, settingsPanel);
 
-  // Account control
-  const accountControl = createAccountControl(map, () => {
-    if (userPanel.classList.contains('hidden')) {
-      openUserPanel(userPanel, userContent, backdrop, accountControl);
+  // Bottom-right controls (in order from top to bottom)
+  
+  // Explore Routes control
+  createExploreRoutesControl(map, () => {
+    if (explorePanel.classList.contains('hidden')) {
+      openExplorePanel(explorePanel, exploreBackdrop);
     } else {
-      closeUserPanel(userPanel, backdrop);
+      closeExplorePanel(explorePanel, exploreBackdrop);
     }
   });
-  await initAccountIcon(accountControl);
+
   
-  // Search control (above account button)
+  // My Routes control
+  const loadMyRoutes = setupMyRoutesPanel(myRoutesPanel, myRoutesBackdrop, map, routeManager);
+  createMyRoutesControl(map, () => {
+    if (myRoutesPanel.classList.contains('hidden')) {
+      openMyRoutesPanel(myRoutesPanel, myRoutesBackdrop, loadMyRoutes);
+    } else {
+      closeMyRoutesPanel(myRoutesPanel, myRoutesBackdrop);
+    }
+  });
+
+  // Search control
   createSearchControl(map, () => {
     if (searchPanel.classList.contains('hidden')) {
       openSearchPanel(searchPanel, searchBackdrop);
@@ -227,6 +318,28 @@ async function init() {
 
   // Setup search panel functionality
   setupSearchPanel(map, searchPanel, searchBackdrop);
+
+  // Setup save route panel
+  setupSaveRoutePanel(saveRoutePanel, saveRouteBackdrop, () => {
+    // Success callback - optionally open My Routes
+    console.log('Route saved successfully!');
+  });
+
+  // Setup explore panel
+  setupExplorePanel(explorePanel, exploreBackdrop, map, routeManager);
+
+  // Setup my routes panel
+  setupMyRoutesPanel(myRoutesPanel, myRoutesBackdrop, map, routeManager);
+
+  // Account control (at the bottom)
+  const accountControl = createAccountControl(map, () => {
+    if (userPanel.classList.contains('hidden')) {
+      openUserPanel(userPanel, userContent, backdrop, accountControl);
+    } else {
+      closeUserPanel(userPanel, backdrop);
+    }
+  });
+  await initAccountIcon(accountControl);
 
   // Event handlers
   setupEventHandlers(map, routeManager, accountControl, dom);
