@@ -249,11 +249,12 @@ export class RouteManager {
     }
 
     // Update ETA and calories
-    const pace = parsePaceSecPerKm(this.targetPaceI.value || '');
+    const pace = parsePaceSecPerKm(this.targetPaceI.value || '') || state.stravaPace || 0;
     const etaSec = pace ? (distance_m / 1000) * pace : null;
     this.stats.etaVal.textContent = pace && etaSec ? fmtHMS(etaSec) : '-';
 
-    const weight = Number(this.targetWeightI.value);
+    // Calories
+    const weight = Number(this.targetWeightI.value) || state.stravaWeight || 0;
     if (pace && weight && etaSec) {
       const kcal = estimateKcalFromPaceWeight(distance_m, pace, weight);
       this.stats.calVal.textContent = Math.round(kcal).toString();
