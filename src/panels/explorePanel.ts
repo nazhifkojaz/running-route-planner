@@ -362,6 +362,10 @@ async function handleLoadRoute(
       route.elevation_loss_m
     );
 
+    // Reset button
+    btn.disabled = false;
+    btn.innerHTML = '<span>📥</span><span>Load on Map</span>';
+
     // Close explore panel
     closeExplorePanel(panel, backdrop);
 
