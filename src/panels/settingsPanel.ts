@@ -157,6 +157,43 @@ export function createSettingsPanel(): HTMLDivElement {
         </div>
         <input id="loadGpxInput" type="file" accept=".gpx,application/gpx+xml" style="display:none" />
       </div>
+
+      <!-- Keyboard Shortcuts Info -->
+      <div class="setting-group">
+        <div class="group-header">
+          <span class="group-icon">⌨️</span>
+          <h4>Keyboard Shortcuts</h4>
+        </div>
+        <div class="shortcuts-list">
+          <div class="shortcut-item">
+            <span class="shortcut-key">ESC</span>
+            <span class="shortcut-desc">Close panels</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">Ctrl+Z</span>
+            <span class="shortcut-desc">Undo last waypoint</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Support -->
+      <div class="setting-group">
+        <div class="group-header">
+          <span class="group-icon">☕</span>
+          <h4>Support Me!</h4>
+        </div>
+        <div class="shortcuts-list">
+          <a 
+            href="https://buymeacoffee.com/nazhifkojaz" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="action-btn support-btn"
+          >
+            <span class="btn-icon">☕</span>
+            <span>Buy Me a Coffee</span>
+          </a>
+        </div>
+      </div>
     </div>
   `;
 
