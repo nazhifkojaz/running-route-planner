@@ -62,6 +62,7 @@ import {
   setupMyRoutesPanel
 } from './panels/myRoutesPanel';
 import { initAnalytics, trackEvent } from './analytics';
+import { setupKeyboardShortcuts } from './keyboardShortcuts';
 
 // Fix Leaflet marker icons
 // @ts-ignore
@@ -121,10 +122,10 @@ function setupEventHandlers(
   map.on('click', (e: L.LeafletMouseEvent) => {
     closeSettingsPanel(dom.settingsPanel);
     closeUserPanel(dom.userPanel, dom.backdrop);
-    closeSearchPanel(dom.searchPanel, dom.searchBackdrop);
-    closeSaveRoutePanel(dom.saveRoutePanel, dom.saveRouteBackdrop);
-    closeExplorePanel(dom.explorePanel, dom.exploreBackdrop);
-    closeMyRoutesPanel(dom.myRoutesPanel, dom.myRoutesBackdrop);
+    closeSearchPanel(dom.searchPanel, dom.backdrop);
+    closeSaveRoutePanel(dom.saveRoutePanel, dom.backdrop);
+    closeExplorePanel(dom.explorePanel, dom.backdrop);
+    closeMyRoutesPanel(dom.myRoutesPanel, dom.backdrop);
     routeManager.addWaypoint(e.latlng.lat, e.latlng.lng);
   });
 
@@ -178,11 +179,11 @@ async function init() {
 
   // Create panels dynamically
   const settingsPanel = createSettingsPanel();
-  const { panel: userPanel, content: userContent, backdrop } = createUserPanel();
-  const { panel: searchPanel, backdrop: searchBackdrop } = createSearchPanel();
-  const { panel: saveRoutePanel, backdrop: saveRouteBackdrop } = createSaveRoutePanel();
-  const { panel: explorePanel, backdrop: exploreBackdrop } = createExplorePanel();
-  const { panel: myRoutesPanel, backdrop: myRoutesBackdrop } = createMyRoutesPanel();
+  const { panel: userPanel, content: userContent, backdrop: backdrop } = createUserPanel();
+  const { panel: searchPanel } = createSearchPanel(backdrop);
+  const { panel: saveRoutePanel } = createSaveRoutePanel(backdrop);
+  const { panel: explorePanel } = createExplorePanel(backdrop);
+  const { panel: myRoutesPanel } = createMyRoutesPanel(backdrop);
 
   // Get DOM references after panels are created
   const dom = {
@@ -205,13 +206,9 @@ async function init() {
     userClose: document.getElementById('userClose') as HTMLButtonElement,
     backdrop,
     searchPanel,
-    searchBackdrop,
     saveRoutePanel,
-    saveRouteBackdrop,
     explorePanel,
-    exploreBackdrop,
     myRoutesPanel,
-    myRoutesBackdrop,
   };
 
   // Routing service
@@ -276,7 +273,7 @@ async function init() {
     const elevation_gain_m = elevMatch ? parseFloat(elevMatch[1]) : undefined;
     const elevation_loss_m = elevMatch ? parseFloat(elevMatch[2]) : undefined;
 
-    openSaveRoutePanel(saveRoutePanel, saveRouteBackdrop, {
+    openSaveRoutePanel(saveRoutePanel, backdrop, {
       distance_m: state.baseDistanceM,
       elevation_gain_m,
       elevation_loss_m
@@ -290,46 +287,46 @@ async function init() {
   // Explore Routes control
   createExploreRoutesControl(map, () => {
     if (explorePanel.classList.contains('hidden')) {
-      openExplorePanel(explorePanel, exploreBackdrop);
+      openExplorePanel(explorePanel, backdrop);
     } else {
-      closeExplorePanel(explorePanel, exploreBackdrop);
+      closeExplorePanel(explorePanel, backdrop);
     }
   });
 
   
   // My Routes control
-  const loadMyRoutes = setupMyRoutesPanel(myRoutesPanel, myRoutesBackdrop, map, routeManager);
+  const loadMyRoutes = setupMyRoutesPanel(myRoutesPanel, backdrop, map, routeManager);
   createMyRoutesControl(map, () => {
     if (myRoutesPanel.classList.contains('hidden')) {
-      openMyRoutesPanel(myRoutesPanel, myRoutesBackdrop, loadMyRoutes);
+      openMyRoutesPanel(myRoutesPanel, backdrop, loadMyRoutes);
     } else {
-      closeMyRoutesPanel(myRoutesPanel, myRoutesBackdrop);
+      closeMyRoutesPanel(myRoutesPanel, backdrop);
     }
   });
 
   // Search control
   createSearchControl(map, () => {
     if (searchPanel.classList.contains('hidden')) {
-      openSearchPanel(searchPanel, searchBackdrop);
+      openSearchPanel(searchPanel, backdrop);
     } else {
-      closeSearchPanel(searchPanel, searchBackdrop);
+      closeSearchPanel(searchPanel, backdrop);
     }
   });
 
   // Setup search panel functionality
-  setupSearchPanel(map, searchPanel, searchBackdrop);
+  setupSearchPanel(map, searchPanel, backdrop);
 
   // Setup save route panel
-  setupSaveRoutePanel(saveRoutePanel, saveRouteBackdrop, () => {
+  setupSaveRoutePanel(saveRoutePanel, backdrop, () => {
     // Success callback - optionally open My Routes
     console.log('Route saved successfully!');
   });
 
   // Setup explore panel
-  setupExplorePanel(explorePanel, exploreBackdrop, map, routeManager);
+  setupExplorePanel(explorePanel, backdrop, map, routeManager);
 
   // Setup my routes panel
-  setupMyRoutesPanel(myRoutesPanel, myRoutesBackdrop, map, routeManager);
+  setupMyRoutesPanel(myRoutesPanel, backdrop, map, routeManager);
 
   // Account control (at the bottom)
   const accountControl = createAccountControl(map, () => {
@@ -343,6 +340,16 @@ async function init() {
 
   // Event handlers
   setupEventHandlers(map, routeManager, accountControl, dom);
+  
+  setupKeyboardShortcuts(routeManager, {
+    settingsPanel: dom.settingsPanel,
+    userPanel: dom.userPanel,
+    backdrop: dom.backdrop,
+    searchPanel: dom.searchPanel,
+    saveRoutePanel: dom.saveRoutePanel,
+    explorePanel: dom.explorePanel,
+    myRoutesPanel: dom.myRoutesPanel,
+  });
 
   console.log('Running Route Planner initialized');
 }
