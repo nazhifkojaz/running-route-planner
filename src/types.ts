@@ -116,3 +116,13 @@ export interface LocationInfo {
   country?: string;
   full_address?: string;
 }
+
+export interface PanelElements {
+  settingsPanel: HTMLDivElement;
+  userPanel: HTMLDivElement;
+  backdrop: HTMLDivElement;
+  searchPanel: HTMLDivElement;
+  saveRoutePanel: HTMLDivElement;
+  explorePanel: HTMLDivElement;
+  myRoutesPanel: HTMLDivElement;
+}
