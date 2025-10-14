@@ -8,11 +8,7 @@ import { trackEvent } from '../analytics';
 import { RouteCreateData } from '../types';
 
 
-export function createSaveRoutePanel(): { panel: HTMLDivElement; backdrop: HTMLDivElement } {
-  const backdrop = document.createElement('div');
-  backdrop.id = 'saveRouteBackdrop';
-  backdrop.className = 'sheet-backdrop hidden';
-
+export function createSaveRoutePanel( backdrop: HTMLDivElement ): { panel: HTMLDivElement } {
   const panel = document.createElement('div');
   panel.id = 'saveRoutePanel';
   panel.className = 'panel save-route-panel hidden';
@@ -157,7 +153,7 @@ export function createSaveRoutePanel(): { panel: HTMLDivElement; backdrop: HTMLD
   document.body.appendChild(backdrop);
   document.body.appendChild(panel);
 
-  return { panel, backdrop };
+  return { panel };
 }
 
 export async function openSaveRoutePanel(

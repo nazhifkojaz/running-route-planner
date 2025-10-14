@@ -10,11 +10,7 @@ import type { RouteManager } from '../route';
 import { RouteListItem } from '../types';
 
 
-export function createExplorePanel(): { panel: HTMLDivElement; backdrop: HTMLDivElement } {
-  const backdrop = document.createElement('div');
-  backdrop.id = 'exploreBackdrop';
-  backdrop.className = 'sheet-backdrop hidden';
-
+export function createExplorePanel(backdrop: HTMLDivElement): { panel: HTMLDivElement } {
   const panel = document.createElement('div');
   panel.id = 'explorePanel';
   panel.className = 'panel explore-panel hidden';
@@ -108,7 +104,7 @@ export function createExplorePanel(): { panel: HTMLDivElement; backdrop: HTMLDiv
   document.body.appendChild(backdrop);
   document.body.appendChild(panel);
 
-  return { panel, backdrop };
+  return { panel };
 }
 
 export function openExplorePanel(panel: HTMLElement, backdrop: HTMLElement) {

@@ -12,11 +12,7 @@ import type { RouteManager } from '../route';
 import { RouteListItem } from '../types';
 
 
-export function createMyRoutesPanel(): { panel: HTMLDivElement; backdrop: HTMLDivElement } {
-  const backdrop = document.createElement('div');
-  backdrop.id = 'myRoutesBackdrop';
-  backdrop.className = 'sheet-backdrop hidden';
-
+export function createMyRoutesPanel( backdrop: HTMLDivElement ): { panel: HTMLDivElement } {
   const panel = document.createElement('div');
   panel.id = 'myRoutesPanel';
   panel.className = 'panel my-routes-panel hidden';
@@ -52,7 +48,7 @@ export function createMyRoutesPanel(): { panel: HTMLDivElement; backdrop: HTMLDi
   document.body.appendChild(backdrop);
   document.body.appendChild(panel);
 
-  return { panel, backdrop };
+  return { panel };
 }
 
 export function openMyRoutesPanel(
