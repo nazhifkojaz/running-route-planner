@@ -4,7 +4,7 @@ import type { MeResponse } from '../types';
 import { state } from '../state';
 
 
-export function createUserPanel(): { panel: HTMLDivElement; content: HTMLDivElement; backdrop: HTMLDivElement } {
+export function createUserPanel(): { panel: HTMLDivElement; content: HTMLElement; backdrop: HTMLDivElement } {
   // Backdrop
   const backdrop = document.createElement('div');
   backdrop.id = 'sheetBackdrop';
@@ -41,7 +41,7 @@ export function createUserPanel(): { panel: HTMLDivElement; content: HTMLDivElem
   return { panel, content, backdrop };
 }
 
-function renderLoggedOut(userContent: HTMLDivElement) {
+function renderLoggedOut(userContent: HTMLElement) {
   userContent.innerHTML = `
     <div class="auth-state">
       <div class="auth-illustration">
@@ -73,7 +73,7 @@ function renderLoggedOut(userContent: HTMLDivElement) {
   });
 }
 
-function renderLoggedIn(me: MeResponse, userContent: HTMLDivElement) {
+function renderLoggedIn(me: MeResponse, userContent: HTMLElement) {
   const stats = [
     { 
       icon: '🏃', 
@@ -158,9 +158,9 @@ function renderLoggedIn(me: MeResponse, userContent: HTMLDivElement) {
 }
 
 export async function openUserPanel(
-  panel: HTMLDivElement,
-  content: HTMLDivElement,
-  backdrop: HTMLDivElement,
+  panel: HTMLElement,
+  content: HTMLElement,
+  backdrop: HTMLElement,
   accountControl: { setIcon: (connected: boolean) => void }
 ) {
   content.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>Loading...</p></div>';
@@ -186,7 +186,7 @@ export async function openUserPanel(
   }
 }
 
-export function closeUserPanel(panel: HTMLDivElement, backdrop: HTMLDivElement) {
+export function closeUserPanel(panel: HTMLElement, backdrop: HTMLElement) {
   panel.classList.add('closing');
   backdrop.classList.add('closing');
   

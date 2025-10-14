@@ -13,12 +13,7 @@ interface SearchResult {
 
 let searchTimeout: number | null = null;
 
-export function createSearchPanel(): { panel: HTMLDivElement; backdrop: HTMLDivElement } {
-  // Backdrop
-  const backdrop = document.createElement('div');
-  backdrop.id = 'searchBackdrop';
-  backdrop.className = 'sheet-backdrop hidden';
-
+export function createSearchPanel( backdrop: HTMLDivElement ): { panel: HTMLDivElement } {
   // Panel
   const panel = document.createElement('div');
   panel.id = 'searchPanel';
@@ -63,7 +58,7 @@ export function createSearchPanel(): { panel: HTMLDivElement; backdrop: HTMLDivE
   document.body.appendChild(backdrop);
   document.body.appendChild(panel);
 
-  return { panel, backdrop };
+  return { panel };
 }
 
 export function openSearchPanel(panel: HTMLElement, backdrop: HTMLElement) {
