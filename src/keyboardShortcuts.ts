@@ -46,22 +46,22 @@ export function setupKeyboardShortcuts(
 
 function handleEscapeKey(panels: PanelElements) {
   if (!panels.saveRoutePanel.classList.contains('hidden')) {
-    closeSaveRoutePanel(panels.saveRoutePanel, panels.saveRouteBackdrop);
+    closeSaveRoutePanel(panels.saveRoutePanel, panels.backdrop);
     return;
   }
 
   if (!panels.explorePanel.classList.contains('hidden')) {
-    closeExplorePanel(panels.explorePanel, panels.exploreBackdrop);
+    closeExplorePanel(panels.explorePanel, panels.backdrop);
     return;
   }
 
   if (!panels.myRoutesPanel.classList.contains('hidden')) {
-    closeMyRoutesPanel(panels.myRoutesPanel, panels.myRoutesBackdrop);
+    closeMyRoutesPanel(panels.myRoutesPanel, panels.backdrop);
     return;
   }
 
   if (!panels.searchPanel.classList.contains('hidden')) {
-    closeSearchPanel(panels.searchPanel, panels.searchBackdrop);
+    closeSearchPanel(panels.searchPanel, panels.backdrop);
     return;
   }
 
