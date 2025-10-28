@@ -1,7 +1,7 @@
-import * as api from '../api';
-import { paceSecToStr, fmtKmBare } from '../utils';
-import type { MeResponse } from '../types';
+import * as api from '../services/api';
 import { state } from '../state';
+import type { MeResponse } from '../types';
+import { fmtKmBare, paceSecToStr } from '../utils';
 
 
 export function createUserPanel(): { panel: HTMLDivElement; content: HTMLElement; backdrop: HTMLDivElement } {
@@ -95,10 +95,13 @@ function renderLoggedIn(me: MeResponse, userContent: HTMLElement) {
       label: 'Avg Pace (Last 5)', 
       value: paceSecToStr(me.avg_pace_5_sec_per_km)
     },
-    { 
-      icon: '❤️', 
-      label: 'Avg HR (Last 5)', 
-      value: me.avg_hr_5 ? `${me.avg_hr_5} bpm` : '−'
+    {
+      icon: '❤️',
+      label: 'Avg HR (Last 5)',
+      value:
+        typeof me.avg_hr_5 === 'number' && me.avg_hr_5 > 0
+          ? `${me.avg_hr_5.toFixed(2)} bpm`
+          : '−'
     }
   ];
 
@@ -205,7 +208,9 @@ export async function initAccountIcon(
     const me = await api.getMe();
     accountControl.setIcon(!!me.connected);
     state.setStravaData(me.avg_pace_5_sec_per_km, me.avg_hr_5, me.weight_kg);
-  } catch {}
+  } catch (error: unknown) {
+    console.warn('Failed to fetch account state', error);
+  }
 
   if (location.hash.includes('connected=strava')) {
     try {
@@ -213,6 +218,8 @@ export async function initAccountIcon(
       const me = await api.getMe();
       accountControl.setIcon(!!me.connected);
       state.setStravaData(me.avg_pace_5_sec_per_km, me.avg_hr_5, me.weight_kg);
-    } catch {}
+    } catch (error: unknown) {
+      console.warn('Failed to refresh Strava data', error);
+    }
   }
 }

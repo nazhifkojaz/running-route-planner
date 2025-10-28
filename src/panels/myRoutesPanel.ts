@@ -1,15 +1,15 @@
 // src/myRoutesPanel.ts
 import L from 'leaflet';
+import type { RouteManager } from '../routing/routeManager';
+import { trackEvent } from '../services/analytics';
 import {
-  getMyRoutes,
-  getRoute,
   deleteRoute,
   geoJSONToLatLngs,
-} from '../routesApi';
-import { fmtKmBare } from '../utils';
-import { trackEvent } from '../analytics';
-import type { RouteManager } from '../route';
+  getMyRoutes,
+  getRoute,
+} from '../services/routes';
 import { RouteListItem } from '../types';
+import { fmtKmBare } from '../utils';
 
 
 export function createMyRoutesPanel( backdrop: HTMLDivElement ): { panel: HTMLDivElement } {
@@ -209,7 +209,7 @@ export function setupMyRoutesPanel(
         btn.addEventListener('click', async (e) => {
           const routeId = (e.currentTarget as HTMLElement).getAttribute('data-route-id');
           if (routeId) {
-            await handleDeleteRoute(routeId, resultsContainer, loadRoutes);
+            await handleDeleteRoute(routeId, resultsContainer);
           }
         });
       });
@@ -225,8 +225,10 @@ export function setupMyRoutesPanel(
 
       trackEvent('my_routes_viewed', { count: response.routes.length });
 
-    } catch (error: any) {
-      renderError(resultsContainer, error.message || 'Failed to load your routes');
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to load your routes';
+      renderError(resultsContainer, message);
       loadMoreSection.classList.add('hidden');
     }
   }
@@ -260,7 +262,7 @@ async function handleLoadRoute(
       throw new Error('Route has no geometry data');
     }
 
-    const { route: routeLatLngs, waypoints } = geoJSONToLatLngs(route.geometry as any);
+    const { route: routeLatLngs, waypoints } = geoJSONToLatLngs(route.geometry);
 
     await routeManager.loadRouteFromData(
       routeLatLngs,
@@ -274,8 +276,9 @@ async function handleLoadRoute(
 
     trackEvent('my_route_loaded', { route_id: routeId });
 
-  } catch (error: any) {
-    alert(`Failed to load route: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    alert(`Failed to load route: ${message}`);
     
     const btn = document.querySelector(`[data-route-id="${routeId}"].load-route-btn`) as HTMLButtonElement;
     if (btn) {
@@ -286,9 +289,8 @@ async function handleLoadRoute(
 }
 
 async function handleDeleteRoute(
-  routeId: string, 
-  resultsContainer: HTMLElement,
-  refreshCallback: () => void
+  routeId: string,
+  resultsContainer: HTMLElement
 ) {
   if (!confirm('Are you sure you want to delete this route? This action cannot be undone.')) {
     return;
@@ -310,7 +312,8 @@ async function handleDeleteRoute(
 
     trackEvent('route_deleted', { route_id: routeId });
 
-  } catch (error: any) {
-    alert(`Failed to delete route: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    alert(`Failed to delete route: ${message}`);
   }
 }

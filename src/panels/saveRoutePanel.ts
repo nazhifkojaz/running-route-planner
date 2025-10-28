@@ -1,10 +1,10 @@
-import { state } from '../state';
-import { 
-  createRoute, 
-  latlngsToGeoJSON,
-} from '../routesApi';
 import { getRouteLocation } from '../geocoding';
-import { trackEvent } from '../analytics';
+import { trackEvent } from '../services/analytics';
+import {
+  createRoute,
+  latlngsToGeoJSON,
+} from '../services/routes';
+import { state } from '../state';
 import { RouteCreateData } from '../types';
 
 
@@ -337,8 +337,9 @@ export function setupSaveRoutePanel(
         onSuccess();
       }, 1500);
 
-    } catch (error: any) {
-      errorEl.textContent = error.message || 'Failed to save route';
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to save route';
+      errorEl.textContent = message;
       errorEl.classList.remove('hidden');
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<span class="btn-icon">💾</span><span>Save Route</span>';

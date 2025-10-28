@@ -1,6 +1,5 @@
 import L from 'leaflet';
-import { CONFIG } from './config';
-
+import { CONFIG } from '../../config';
 
 export function createZoomControl(map: L.Map) {
   map.zoomControl?.remove();
@@ -113,10 +112,14 @@ export function createStatsControls(map: L.Map): {
   };
 }
 
+type AccountControlHandle = L.Control & {
+  setIcon: (connected: boolean) => void;
+};
+
 export function createAccountControl(
   map: L.Map,
   onToggle: () => void
-): { setIcon: (connected: boolean) => void } {
+): AccountControlHandle {
   class AccountControl extends L.Control {
     private btn!: HTMLAnchorElement;
 
@@ -139,7 +142,7 @@ export function createAccountControl(
   }
 
   const control = new AccountControl({ position: 'bottomright' }).addTo(map);
-  return control as any;
+  return control as AccountControlHandle;
 }
 
 export function createSearchControl(
@@ -164,11 +167,15 @@ export function createSearchControl(
   new SearchControl({ position: 'bottomright' }).addTo(map);
 }
 
+type MarkersControlHandle = L.Control & {
+  setVisibility: (visible: boolean) => void;
+};
+
 export function createMarkersToggleControl(
   map: L.Map,
   kmLayer: L.LayerGroup,
   onToggle: (visible: boolean) => void
-): { setVisibility: (visible: boolean) => void } {
+): MarkersControlHandle {
   class MarkersToggleControl extends L.Control {
     private btn!: HTMLAnchorElement;
     private markersVisible = true;
@@ -204,7 +211,7 @@ export function createMarkersToggleControl(
   }
 
   const control = new MarkersToggleControl({ position: 'bottomleft' }).addTo(map);
-  return control as any;
+  return control as MarkersControlHandle;
 }
 
 export function createSaveRouteControl(

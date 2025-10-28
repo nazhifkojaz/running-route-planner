@@ -1,23 +1,11 @@
-import { RouteManager } from './route';
-import { 
-  closeSettingsPanel 
-} from './panels/settingsPanel';
-import { 
-  closeUserPanel 
-} from './panels/userPanel';
-import {
-  closeSearchPanel
-} from './panels/searchPanel';
-import {
-  closeSaveRoutePanel
-} from './panels/saveRoutePanel';
-import {
-  closeExplorePanel
-} from './panels/explorePanel';
-import {
-  closeMyRoutesPanel
-} from './panels/myRoutesPanel';
-import { PanelElements } from './types';
+import { closeExplorePanel } from '../panels/explorePanel';
+import { closeMyRoutesPanel } from '../panels/myRoutesPanel';
+import { closeSaveRoutePanel } from '../panels/saveRoutePanel';
+import { closeSearchPanel } from '../panels/searchPanel';
+import { closeSettingsPanel } from '../panels/settingsPanel';
+import { closeUserPanel } from '../panels/userPanel';
+import type { RouteManager } from '../routing/routeManager';
+import type { PanelElements } from '../types';
 
 
 export function setupKeyboardShortcuts(

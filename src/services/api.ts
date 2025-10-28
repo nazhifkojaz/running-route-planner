@@ -1,5 +1,5 @@
-import { CONFIG } from './config';
-import type { MeResponse } from './types';
+import { CONFIG } from '../config';
+import type { MeResponse } from '../types';
 
 
 function getAuthHeaders(): HeadersInit {

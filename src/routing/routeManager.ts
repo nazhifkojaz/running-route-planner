@@ -1,11 +1,17 @@
 import L from 'leaflet';
-import { CONFIG } from './config';
-import { state } from './state';
-import { estimateKcalFromPaceWeight, fmtHMS, fmtKmBare, parsePaceSecPerKm, polylineDistanceMeters } from './utils';
-import { elevationStats } from './elevation';
-import { trackEvent } from './analytics';
-import type { LatLng, LonLat } from './types';
-import type { RoutingService } from './routing';
+import { CONFIG } from '../config';
+import { elevationStats } from '../elevation';
+import { trackEvent } from '../services/analytics';
+import { state } from '../state';
+import type { LatLng, LonLat } from '../types';
+import {
+  estimateKcalFromPaceWeight,
+  fmtHMS,
+  fmtKmBare,
+  parsePaceSecPerKm,
+  polylineDistanceMeters,
+} from '../utils';
+import type { RoutingService } from './routingService';
 
 interface StatsElements {
   elevVal: HTMLSpanElement;

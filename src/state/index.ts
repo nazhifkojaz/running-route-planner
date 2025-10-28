@@ -1,6 +1,5 @@
 import L from 'leaflet';
-import type { LonLat, LatLng } from './types';
-
+import type { LonLat, LatLng } from '../types';
 
 export class AppState {
   waypoints: LonLat[] = [];

@@ -17,8 +17,8 @@ export async function elevationStats(latlngs: [number, number][]): Promise<ElevS
     const url = `https://api.open-elevation.com/api/v1/lookup?locations=${encodeURIComponent(locs)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`elev ${res.status}`);
-    const data = await res.json();
-    const elevations: number[] = (data.results ?? []).map((r: any) => r.elevation);
+    const data = (await res.json()) as { results?: Array<{ elevation: number }> };
+    const elevations: number[] = (data.results ?? []).map((r) => r.elevation);
     if (elevations.length < 2) return null;
     let gain = 0, loss = 0;
     for (let i = 1; i < elevations.length; i++) {
