@@ -6,7 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 5173"
+    "preview": "vite preview --port 5173",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "leaflet": "^1.9.4"
@@ -14,7 +20,16 @@
   "devDependencies": {
     "@types/css-modules": "^1.0.5",
     "@types/leaflet": "^1.9.20",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "jsdom": "^24.1.0",
+    "prettier": "^3.3.3",
     "typescript": "^5.6.3",
-    "vite": "^5.4.8"
+    "vite": "^5.4.8",
+    "vitest": "^1.6.0"
   }
 }
