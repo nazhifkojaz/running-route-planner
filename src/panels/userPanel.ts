@@ -95,10 +95,13 @@ function renderLoggedIn(me: MeResponse, userContent: HTMLElement) {
       label: 'Avg Pace (Last 5)', 
       value: paceSecToStr(me.avg_pace_5_sec_per_km)
     },
-    { 
-      icon: '❤️', 
-      label: 'Avg HR (Last 5)', 
-      value: me.avg_hr_5 ? `${me.avg_hr_5} bpm` : '−'
+    {
+      icon: '❤️',
+      label: 'Avg HR (Last 5)',
+      value:
+        typeof me.avg_hr_5 === 'number' && me.avg_hr_5 > 0
+          ? `${me.avg_hr_5.toFixed(2)} bpm`
+          : '−'
     }
   ];
 

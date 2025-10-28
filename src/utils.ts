@@ -15,8 +15,8 @@ export function paceSecToStr(sec?: number | null): string {
 }
 
 export function fmtKmBare(m: number | null | undefined): string {
-  if (!m) return '0 Km';
-  return (m / 1000).toFixed(2) + ' Km';
+  if (!m) return '0.00 Km';
+  return `${(m / 1000).toFixed(2)} Km`;
 }
 
 export function fmtHMS(totalSeconds: number): string {
