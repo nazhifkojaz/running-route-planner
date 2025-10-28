@@ -1,4 +1,4 @@
-import { CONFIG } from './config';
+import { CONFIG } from '../config';
 import type {
     GeoJSONGeometry,
     LatLng,
@@ -6,7 +6,7 @@ import type {
     RoutesListResponse,
     RouteUpdateData,
     SavedRoute
-} from './types';
+} from '../types';
 
 
 function getAuthHeaders(): HeadersInit {

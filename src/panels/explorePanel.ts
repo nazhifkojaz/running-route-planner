@@ -1,13 +1,13 @@
 import L from 'leaflet';
-import { 
-  exploreRoutes, 
-  getRoute, 
+import type { RouteManager } from '../routing/routeManager';
+import { trackEvent } from '../services/analytics';
+import {
+  exploreRoutes,
+  getRoute,
   geoJSONToLatLngs,
-} from '../routesApi';
-import { fmtKmBare } from '../utils';
-import { trackEvent } from '../analytics';
-import type { RouteManager } from '../route';
+} from '../services/routes';
 import { RouteListItem } from '../types';
+import { fmtKmBare } from '../utils';
 
 
 export function createExplorePanel(backdrop: HTMLDivElement): { panel: HTMLDivElement } {
@@ -278,8 +278,10 @@ export function setupExplorePanel(
 
       trackEvent('routes_explored', { count: response.routes.length });
 
-    } catch (error: any) {
-      renderError(resultsContainer, error.message || 'Failed to load routes');
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to load routes';
+      renderError(resultsContainer, message);
       loadMoreSection.classList.add('hidden');
     }
   }
@@ -347,7 +349,7 @@ async function handleLoadRoute(
     }
 
     // Convert GeoJSON to Leaflet format
-    const { route: routeLatLngs, waypoints } = geoJSONToLatLngs(route.geometry as any);
+    const { route: routeLatLngs, waypoints } = geoJSONToLatLngs(route.geometry);
 
     // Load onto map using RouteManager
     await routeManager.loadRouteFromData(
@@ -370,8 +372,9 @@ async function handleLoadRoute(
       distance_km: (route.distance_m / 1000).toFixed(2)
     });
 
-  } catch (error: any) {
-    alert(`Failed to load route: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    alert(`Failed to load route: ${message}`);
     
     // Reset button
     const btn = document.querySelector(`[data-route-id="${routeId}"].load-route-btn`) as HTMLButtonElement;

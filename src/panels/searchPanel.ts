@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import { trackEvent } from '../analytics';
+import { trackEvent } from '../services/analytics';
 
 
 interface SearchResult {

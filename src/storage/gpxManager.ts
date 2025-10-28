@@ -1,11 +1,23 @@
 import L from 'leaflet';
-import { CONFIG } from './config';
-import { state } from './state';
-import { polylineDistanceMeters } from './utils';
-import { toGPX, fromGPX } from './gpx';
-import { trackEvent } from './analytics';
-import type { LatLng } from './types';
-import type { RouteManager } from './route';
+import { CONFIG } from '../config';
+import type { RouteManager } from '../routing/routeManager';
+import { trackEvent } from '../services/analytics';
+import { state } from '../state';
+import type { LatLng } from '../types';
+import { polylineDistanceMeters } from '../utils';
+import { fromGPX, toGPX } from './gpx';
+
+type FilePickerOptionsLite = {
+  suggestedName?: string;
+  types?: Array<{ description?: string; accept: Record<string, string[]> }>;
+};
+
+type FileSaveHandle = {
+  createWritable: () => Promise<{
+    write: (data: Blob) => Promise<void>;
+    close: () => Promise<void>;
+  }>;
+};
 
 
 export async function downloadGPX(gpx: string, filename = 'route.gpx') {
@@ -14,9 +26,12 @@ export async function downloadGPX(gpx: string, filename = 'route.gpx') {
 
   // Try File System Access API
   try {
-    const w = window as any;
-    if (w.showSaveFilePicker) {
-      const handle = await w.showSaveFilePicker({
+    type FilePickerWindow = Window & {
+      showSaveFilePicker?: (options: FilePickerOptionsLite) => Promise<FileSaveHandle>;
+    };
+    const pickerWindow = window as FilePickerWindow;
+    if (pickerWindow.showSaveFilePicker) {
+      const handle = await pickerWindow.showSaveFilePicker({
         suggestedName: filename,
         types: [{ description: 'GPX route', accept: { [type]: ['.gpx'] } }],
       });
@@ -25,17 +40,24 @@ export async function downloadGPX(gpx: string, filename = 'route.gpx') {
       await writable.close();
       return;
     }
-  } catch {}
+  } catch (error: unknown) {
+    console.warn('File picker download failed; falling back', error);
+  }
 
   // Try Web Share API
   try {
-    const n = navigator as any;
-    if (n.share) {
+    type ShareNavigator = Navigator & {
+      share?: (data: ShareData) => Promise<void>;
+    };
+    const shareNavigator = navigator as ShareNavigator;
+    if (shareNavigator.share) {
       const file = new File([blob], filename, { type });
-      await n.share({ files: [file], title: filename, text: 'GPX route' });
+      await shareNavigator.share({ files: [file], title: filename, text: 'GPX route' });
       return;
     }
-  } catch {}
+  } catch (error: unknown) {
+    console.warn('Web share failed; falling back', error);
+  }
 
   // Fallback to download link
   const url = URL.createObjectURL(blob);
@@ -46,7 +68,11 @@ export async function downloadGPX(gpx: string, filename = 'route.gpx') {
   a.click();
   setTimeout(() => {
     a.remove();
-    try { URL.revokeObjectURL(url); } catch {}
+    try {
+      URL.revokeObjectURL(url);
+    } catch (error: unknown) {
+      console.warn('Failed to revoke object URL', error);
+    }
   }, 2500);
 }
 
@@ -105,7 +131,8 @@ export async function loadGPX(
     routeManager.addKmLabels(route, state.baseDistanceM);
 
     trackEvent('gpx_loaded');
-  } catch (err: any) {
-    alert(`Failed to load GPX: ${err?.message ?? err}`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    alert(`Failed to load GPX: ${message}`);
   }
 }

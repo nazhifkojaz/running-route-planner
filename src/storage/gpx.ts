@@ -83,7 +83,7 @@ export function fromGPX(gpxText: string): GpxData {
   }
 
   // Markers: prefer <rtept>, else <wpt> (document order)
-  let markers: LatLng[] =
+  const markers: LatLng[] =
     (rtepts.length ? rtepts : wpts).map(pt => [
       parseFloat(pt.getAttribute('lat') || 'NaN'),
       parseFloat(pt.getAttribute('lon') || 'NaN'),

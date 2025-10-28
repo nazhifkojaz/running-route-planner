@@ -1,7 +1,7 @@
 declare global {
   interface Window {
-    dataLayer?: any[];
-    gtag?: (...args: any[]) => void;
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -21,9 +21,9 @@ function loadGtag(id: string) {
   document.head.appendChild(s);
 
   // 2) Bootstrap dataLayer + gtag shim
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtagShim(...args: any[]) {
-    window.dataLayer!.push(arguments);
+  window.dataLayer = window.dataLayer ?? [];
+  window.gtag = function gtagShim(...args: unknown[]) {
+    window.dataLayer!.push(args);
   };
 
   // 3) Initialize GA4 (debug in local dev)
@@ -55,13 +55,16 @@ function bindSpaPageviews() {
 
   // Patch pushState/replaceState so SPA navigations trigger a page_view
   (['pushState', 'replaceState'] as const).forEach((method) => {
-    const orig = history[method];
-    history[method] = function (this: History, ...args: any[]) {
-      const ret = orig.apply(this, args as any);
+    const original = history[method];
+    history[method] = function (
+      this: History,
+      ...args: Parameters<typeof original>
+    ) {
+      const ret = original.apply(this, args);
       // Wait a tick so URL/title settle
       setTimeout(fire, 0);
       return ret;
-    } as any;
+    } as History[typeof method];
   });
 
   window.addEventListener('popstate', fire);
@@ -79,7 +82,7 @@ export function initAnalytics() {
 
 export function trackEvent(
   name: string,
-  params: Record<string, any> = {}
+  params: Record<string, unknown> = {}
 ): void {
   if (!GA_ID || typeof window.gtag !== 'function') return;
   window.gtag('event', name, params);
