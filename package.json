@@ -2,6 +2,7 @@
   "name": "running-route-planner",
   "version": "0.0.1",
   "private": true,
+  "packageManager": "pnpm@10.31.0",
   "scripts": {
     "dev": "concurrently \"pnpm --filter client dev\" \"pnpm run dev:backend\"",
     "dev:frontend": "pnpm --filter client dev",
