@@ -3,12 +3,10 @@ import type { RouteManager } from '../routing/routeManager';
 import { trackEvent } from '../services/analytics';
 import {
   deleteRoute,
-  geoJSONToLatLngs,
   getMyRoutes,
-  getRoute,
 } from '../services/routes';
-import { RouteListItem } from '../types';
-import { escapeHtml, fmtKmBare } from '../utils';
+import { openPanel, closePanel } from './panelUtils';
+import { renderRouteCard, renderLoading, renderEmpty, renderError, handleLoadRoute } from './routeCardHelpers';
 
 
 export function createMyRoutesPanel(): { panel: HTMLDivElement } {
@@ -49,97 +47,16 @@ export function createMyRoutesPanel(): { panel: HTMLDivElement } {
 }
 
 export function openMyRoutesPanel(
-  panel: HTMLElement, 
+  panel: HTMLElement,
   backdrop: HTMLElement,
   loadRoutesCallback: () => void
 ) {
-  backdrop.classList.remove('hidden');
-  panel.classList.remove('hidden');
-  panel.classList.add('opening');
-  
-  setTimeout(() => panel.classList.remove('opening'), 300);
-  
+  openPanel(panel, backdrop);
   loadRoutesCallback();
 }
 
 export function closeMyRoutesPanel(panel: HTMLElement, backdrop: HTMLElement) {
-  panel.classList.add('closing');
-  backdrop.classList.add('closing');
-  
-  setTimeout(() => {
-    panel.classList.add('hidden');
-    backdrop.classList.add('hidden');
-    panel.classList.remove('closing');
-    backdrop.classList.remove('closing');
-  }, 250);
-}
-
-function renderMyRouteCard(route: RouteListItem): string {
-  const distance = fmtKmBare(route.distance_m);
-  const elevation = route.elevation_gain_m 
-    ? `⛰️ +${Math.round(route.elevation_gain_m)}m`
-    : '';
-  const location = [route.city, route.country].filter(Boolean).join(', ') || 'Unknown location';
-  const date = new Date(route.created_at).toLocaleDateString();
-  const visibilityBadge = route.visibility === 'public' 
-    ? '<span class="route-card-badge public">PUBLIC</span>'
-    : '<span class="route-card-badge private">PRIVATE</span>';
-
-  return `
-    <div class="route-card my-route-card" data-route-id="${route.id}">
-      <div class="route-card-header">
-        <div>
-          <h4 class="route-card-title">${escapeHtml(route.name)}</h4>
-          <p class="route-card-author">${date}</p>
-          ${route.description ? `<p class="route-card-description">${escapeHtml(route.description)}</p>` : ''}
-        </div>
-        ${visibilityBadge}
-      </div>
-      <div class="route-card-meta">
-        <span>📏 ${distance}</span>
-        ${elevation ? `<span>${elevation}</span>` : ''}
-        <span>📍 ${escapeHtml(location)}</span>
-      </div>
-      <div class="route-card-actions">
-        <button class="card-action-btn load-route-btn" data-route-id="${route.id}">
-          <span>📥</span>
-          <span>Load</span>
-        </button>
-        <button class="card-action-btn danger-action-btn delete-route-btn" data-route-id="${route.id}">
-          <span>🗑️</span>
-          <span>Delete</span>
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-function renderLoading(container: HTMLElement) {
-  container.innerHTML = `
-    <div class="explore-loading">
-      <div class="spinner"></div>
-      <p>Loading your routes...</p>
-    </div>
-  `;
-}
-
-function renderEmpty(container: HTMLElement) {
-  container.innerHTML = `
-    <div class="explore-empty">
-      <div class="explore-empty-icon">📂</div>
-      <p>No saved routes yet</p>
-      <p class="muted small">Create and save a route to see it here!</p>
-    </div>
-  `;
-}
-
-function renderError(container: HTMLElement, message: string) {
-  container.innerHTML = `
-    <div class="explore-error">
-      <span class="error-icon">⚠️</span>
-      <span>${message}</span>
-    </div>
-  `;
+  closePanel(panel, backdrop);
 }
 
 export function setupMyRoutesPanel(
@@ -165,7 +82,7 @@ export function setupMyRoutesPanel(
     if (loadBtn) {
       const routeId = loadBtn.getAttribute('data-route-id');
       if (routeId) {
-        await handleLoadRoute(routeId, routeManager, panel, backdrop);
+        await handleLoadRoute(routeId, routeManager, () => closeMyRoutesPanel(panel, backdrop), 'Load');
       }
       return;
     }
@@ -180,7 +97,7 @@ export function setupMyRoutesPanel(
 
   async function loadRoutes(append: boolean = false) {
     if (!append) {
-      renderLoading(resultsContainer);
+      renderLoading(resultsContainer, 'Loading your routes...');
       currentOffset = 0;
     }
 
@@ -188,12 +105,18 @@ export function setupMyRoutesPanel(
       const response = await getMyRoutes(20, currentOffset);
 
       if (response.routes.length === 0 && currentOffset === 0) {
-        renderEmpty(resultsContainer);
+        renderEmpty(resultsContainer, '📂', 'No saved routes yet');
         loadMoreSection.classList.add('hidden');
         return;
       }
 
-      const html = response.routes.map(route => renderMyRouteCard(route)).join('');
+      const html = response.routes.map(route => renderRouteCard(route, {
+        actions: [
+          { label: 'Load', cssClass: 'load-route-btn' },
+          { label: 'Delete', cssClass: 'danger-action-btn delete-route-btn', icon: '🗑️' },
+        ],
+        visibilityBadge: 'dynamic',
+      })).join('');
       
       if (append) {
         resultsContainer.insertAdjacentHTML('beforeend', html);
@@ -226,50 +149,6 @@ export function setupMyRoutesPanel(
   return loadRoutes;
 }
 
-async function handleLoadRoute(
-  routeId: string,
-  routeManager: RouteManager,
-  panel: HTMLElement,
-  backdrop: HTMLDivElement
-) {
-  const btn = document.querySelector(`.my-route-card[data-route-id="${routeId}"] .load-route-btn`) as HTMLButtonElement;
-  try {
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<span>⏳</span><span>Loading...</span>';
-    }
-
-    const route = await getRoute(routeId);
-
-    if (!route.geometry) {
-      throw new Error('Route has no geometry data');
-    }
-
-    const { route: routeLatLngs, waypoints } = geoJSONToLatLngs(route.geometry);
-
-    await routeManager.loadRouteFromData(
-      routeLatLngs,
-      waypoints || [],
-      route.distance_m,
-      route.elevation_gain_m,
-      route.elevation_loss_m
-    );
-
-    closeMyRoutesPanel(panel, backdrop);
-
-    trackEvent('my_route_loaded', { route_id: routeId });
-
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    alert(`Failed to load route: ${message}`);
-    
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<span>📥</span><span>Load</span>';
-    }
-  }
-}
-
 async function handleDeleteRoute(
   routeId: string,
   resultsContainer: HTMLElement
@@ -281,7 +160,7 @@ async function handleDeleteRoute(
   try {
     await deleteRoute(routeId);
 
-    const card = document.querySelector(`[data-route-id="${routeId}"].my-route-card`);
+    const card = document.querySelector(`.route-card[data-route-id="${routeId}"]`);
     if (card) {
       card.remove();
     }
