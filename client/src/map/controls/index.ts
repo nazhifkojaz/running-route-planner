@@ -1,5 +1,31 @@
 import L from 'leaflet';
-import { CONFIG } from '../../config';
+import { MAP_CONFIG } from '../../config/map';
+import { GEOLOCATION_CONFIG } from '../../config/geolocation';
+
+function createToggleControl(
+  map: L.Map,
+  position: L.ControlPosition,
+  cssClass: string,
+  title: string,
+  emoji: string,
+  onToggle: () => void,
+) {
+  const Control = L.Control.extend({
+    onAdd() {
+      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+      const btn = L.DomUtil.create('a', cssClass, container) as HTMLAnchorElement;
+      btn.href = '#';
+      btn.title = title;
+      btn.textContent = emoji;
+
+      L.DomEvent.on(btn, 'click', L.DomEvent.stopPropagation)
+        .on(btn, 'click', L.DomEvent.preventDefault)
+        .on(btn, 'click', onToggle);
+      return container;
+    }
+  });
+  new Control({ position }).addTo(map);
+}
 
 export function createZoomControl(map: L.Map) {
   map.zoomControl?.remove();
@@ -18,10 +44,10 @@ export function createZoomControl(map: L.Map) {
     navigator.geolocation.getCurrentPosition(
       (pos) => map.flyTo(
         [pos.coords.latitude, pos.coords.longitude],
-        Math.max(map.getZoom(), CONFIG.USER_LOCATION_ZOOM)
+        Math.max(map.getZoom(), MAP_CONFIG.USER_LOCATION_ZOOM)
       ),
       () => {},
-      CONFIG.GEO_OPTIONS
+      GEOLOCATION_CONFIG.GEO_OPTIONS
     );
   });
 
@@ -145,26 +171,8 @@ export function createAccountControl(
   return control as AccountControlHandle;
 }
 
-export function createSearchControl(
-  map: L.Map,
-  onToggle: () => void
-) {
-  class SearchControl extends L.Control {
-    onAdd() {
-      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-      const btn = L.DomUtil.create('a', 'search-btn', container) as HTMLAnchorElement;
-      btn.href = '#';
-      btn.title = 'Search Location';
-      btn.textContent = '🔎';
-
-      L.DomEvent.on(btn, 'click', L.DomEvent.stopPropagation)
-        .on(btn, 'click', L.DomEvent.preventDefault)
-        .on(btn, 'click', onToggle);
-      return container;
-    }
-  }
-
-  new SearchControl({ position: 'bottomright' }).addTo(map);
+export function createSearchControl(map: L.Map, onToggle: () => void) {
+  createToggleControl(map, 'bottomright', 'search-btn', 'Search Location', '🔎', onToggle);
 }
 
 type MarkersControlHandle = L.Control & {
@@ -185,7 +193,7 @@ export function createMarkersToggleControl(
       this.btn = L.DomUtil.create('a', 'markers-toggle-btn', container) as HTMLAnchorElement;
       this.btn.href = '#';
       this.btn.title = 'Toggle Markers';
-      this.btn.textContent = '😳'; // Default: shown
+      this.btn.textContent = '😳';
 
       L.DomEvent.on(this.btn, 'click', L.DomEvent.stopPropagation)
         .on(this.btn, 'click', L.DomEvent.preventDefault)
@@ -214,68 +222,14 @@ export function createMarkersToggleControl(
   return control as MarkersControlHandle;
 }
 
-export function createSaveRouteControl(
-  map: L.Map,
-  onToggle: () => void
-) {
-  class SaveRouteControl extends L.Control {
-    onAdd() {
-      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-      const btn = L.DomUtil.create('a', 'save-route-btn', container) as HTMLAnchorElement;
-      btn.href = '#';
-      btn.title = 'Save Route';
-      btn.textContent = '💾';
-
-      L.DomEvent.on(btn, 'click', L.DomEvent.stopPropagation)
-        .on(btn, 'click', L.DomEvent.preventDefault)
-        .on(btn, 'click', onToggle);
-      return container;
-    }
-  }
-
-  new SaveRouteControl({ position: 'bottomleft' }).addTo(map);
+export function createSaveRouteControl(map: L.Map, onToggle: () => void) {
+  createToggleControl(map, 'bottomleft', 'save-route-btn', 'Save Route', '💾', onToggle);
 }
 
-export function createMyRoutesControl(
-  map: L.Map,
-  onToggle: () => void
-) {
-  class MyRoutesControl extends L.Control {
-    onAdd() {
-      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-      const btn = L.DomUtil.create('a', 'my-routes-btn', container) as HTMLAnchorElement;
-      btn.href = '#';
-      btn.title = 'My Routes';
-      btn.textContent = '📂';
-
-      L.DomEvent.on(btn, 'click', L.DomEvent.stopPropagation)
-        .on(btn, 'click', L.DomEvent.preventDefault)
-        .on(btn, 'click', onToggle);
-      return container;
-    }
-  }
-
-  new MyRoutesControl({ position: 'bottomright' }).addTo(map);
+export function createMyRoutesControl(map: L.Map, onToggle: () => void) {
+  createToggleControl(map, 'bottomright', 'my-routes-btn', 'My Routes', '📂', onToggle);
 }
 
-export function createExploreRoutesControl(
-  map: L.Map,
-  onToggle: () => void
-) {
-  class ExploreRoutesControl extends L.Control {
-    onAdd() {
-      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-      const btn = L.DomUtil.create('a', 'explore-routes-btn', container) as HTMLAnchorElement;
-      btn.href = '#';
-      btn.title = 'Explore Routes';
-      btn.textContent = '🗺️';
-
-      L.DomEvent.on(btn, 'click', L.DomEvent.stopPropagation)
-        .on(btn, 'click', L.DomEvent.preventDefault)
-        .on(btn, 'click', onToggle);
-      return container;
-    }
-  }
-
-  new ExploreRoutesControl({ position: 'bottomright' }).addTo(map);
+export function createExploreRoutesControl(map: L.Map, onToggle: () => void) {
+  createToggleControl(map, 'bottomright', 'explore-routes-btn', 'Explore Routes', '🗺️', onToggle);
 }
