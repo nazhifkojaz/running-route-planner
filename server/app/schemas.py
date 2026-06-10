@@ -3,36 +3,26 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Literal, Any
 
-# ========== Existing schemas ==========
 
-class MeOut(BaseModel):
+class _StravaDataBase(BaseModel):
+    strava_athlete_id: int | None = None
+    username: str | None = None
+    weight_kg: float | None = None
+    run_count_all: int | None = None
+    run_distance_all_m: float | None = None
+    avg_pace_5_sec_per_km: float | None = None
+    avg_hr_5: float | None = None
+    cached_profile_at: datetime | None = None
+    cached_stats_at: datetime | None = None
+    cached_runs_at: datetime | None = None
+
+
+class MeOut(_StravaDataBase):
     connected: bool
-    strava_athlete_id: int | None = None
-    username: str | None = None
-    weight_kg: float | None = None
-    run_count_all: int | None = None
-    run_distance_all_m: float | None = None
-    avg_pace_5_sec_per_km: float | None = None
-    avg_hr_5: float | None = None
-    avg_pace_sec_per_km: float | None = None
-    avg_heart_rate: float | None = None
-    cached_profile_at: datetime | None = None
-    cached_stats_at: datetime | None = None
-    cached_runs_at: datetime | None = None
 
 
-class SyncOut(BaseModel):
+class SyncOut(_StravaDataBase):
     ok: bool
-    strava_athlete_id: int | None = None
-    username: str | None = None
-    weight_kg: float | None = None
-    run_count_all: int | None = None
-    run_distance_all_m: float | None = None
-    avg_pace_5_sec_per_km: float | None = None
-    avg_hr_5: float | None = None
-    cached_profile_at: datetime | None = None
-    cached_stats_at: datetime | None = None
-    cached_runs_at: datetime | None = None
 
 
 # ========== NEW: Route schemas ==========

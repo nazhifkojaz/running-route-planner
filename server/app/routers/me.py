@@ -45,8 +45,6 @@ async def me(request: Request):
         run_distance_all_m=u.get("run_distance_all_m"),
         avg_pace_5_sec_per_km=u.get("avg_pace_5_sec_per_km"),
         avg_hr_5=u.get("avg_hr_5"),
-        avg_pace_sec_per_km=u.get("avg_pace_sec_per_km"),
-        avg_heart_rate=u.get("avg_heart_rate"),
         cached_profile_at=u.get("cached_profile_at"),
         cached_stats_at=u.get("cached_stats_at"),
         cached_runs_at=u.get("cached_runs_at"),

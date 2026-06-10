@@ -1,5 +1,6 @@
 import secrets
 import uuid
+from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
@@ -18,7 +19,7 @@ async def auth_start(redirect: str | None = None):
         raise HTTPException(500, "Missing STRAVA_* envs")
     state_val = secrets.token_urlsafe(16)
     resp = RedirectResponse(
-        "https://www.strava.com/oauth/authorize?" + __import__("urllib.parse", fromlist=["urlencode"]).urlencode({
+        "https://www.strava.com/oauth/authorize?" + urlencode({
             "client_id": STRAVA_CLIENT_ID,
             "redirect_uri": STRAVA_REDIRECT_URL,
             "response_type": "code",
