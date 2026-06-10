@@ -1,3 +1,5 @@
+import { openPanel, closePanel } from './panelUtils';
+
 export function createSettingsPanel(): HTMLDivElement {
   const panel = document.createElement('div');
   panel.id = 'settingsPanel';
@@ -202,15 +204,9 @@ export function createSettingsPanel(): HTMLDivElement {
 }
 
 export function openSettingsPanel(panel: HTMLElement) {
-  panel.classList.remove('hidden');
-  panel.classList.add('opening');
-  setTimeout(() => panel.classList.remove('opening'), 300);
+  openPanel(panel);
 }
 
 export function closeSettingsPanel(panel: HTMLElement) {
-  panel.classList.add('closing');
-  setTimeout(() => {
-    panel.classList.add('hidden');
-    panel.classList.remove('closing');
-  }, 250);
+  closePanel(panel);
 }

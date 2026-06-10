@@ -6,6 +6,7 @@ import {
 } from '../services/routes';
 import { state } from '../state';
 import { RouteCreateData } from '../types';
+import { openPanel, closePanel } from './panelUtils';
 
 
 export function createSaveRoutePanel(): { panel: HTMLDivElement } {
@@ -209,32 +210,21 @@ export async function openSaveRoutePanel(
     }
   }
 
-  backdrop.classList.remove('hidden');
-  panel.classList.remove('hidden');
-  panel.classList.add('opening');
+  openPanel(panel, backdrop);
 
   setTimeout(() => {
-    panel.classList.remove('opening');
     const nameInput = document.getElementById('routeName') as HTMLInputElement;
     nameInput?.focus();
   }, 300);
 }
 
 export function closeSaveRoutePanel(panel: HTMLElement, backdrop: HTMLElement) {
-  panel.classList.add('closing');
-  backdrop.classList.add('closing');
+  closePanel(panel, backdrop);
 
   setTimeout(() => {
-    panel.classList.add('hidden');
-    backdrop.classList.add('hidden');
-    panel.classList.remove('closing');
-    backdrop.classList.remove('closing');
-
-    // Reset form
     const form = document.getElementById('saveRouteForm') as HTMLFormElement;
     form?.reset();
 
-    // Hide messages
     document.getElementById('saveRouteError')?.classList.add('hidden');
     document.getElementById('saveRouteSuccess')?.classList.add('hidden');
   }, 250);

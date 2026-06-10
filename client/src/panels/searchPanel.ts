@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import { trackEvent } from '../services/analytics';
 import { escapeHtml } from '../utils';
+import { openPanel, closePanel } from './panelUtils';
 
 
 interface SearchResult {
@@ -62,32 +63,22 @@ export function createSearchPanel(): { panel: HTMLDivElement } {
 }
 
 export function openSearchPanel(panel: HTMLElement, backdrop: HTMLElement) {
-  backdrop.classList.remove('hidden');
-  panel.classList.remove('hidden');
-  panel.classList.add('opening');
-  
+  openPanel(panel, backdrop);
+
   setTimeout(() => {
-    panel.classList.remove('opening');
     const input = document.getElementById('searchInput') as HTMLInputElement;
     input?.focus();
   }, 300);
 }
 
 export function closeSearchPanel(panel: HTMLElement, backdrop: HTMLElement) {
-  panel.classList.add('closing');
-  backdrop.classList.add('closing');
-  
+  closePanel(panel, backdrop);
+
   setTimeout(() => {
-    panel.classList.add('hidden');
-    backdrop.classList.add('hidden');
-    panel.classList.remove('closing');
-    backdrop.classList.remove('closing');
-    
-    // Clear search
     const input = document.getElementById('searchInput') as HTMLInputElement;
     const results = document.getElementById('searchResults') as HTMLDivElement;
     if (input) input.value = '';
-    if (results) results.innerHTML = '';
+    if (results) results.replaceChildren();
   }, 250);
 }
 

@@ -2,6 +2,7 @@ import * as api from '../services/api';
 import { state } from '../state';
 import type { MeResponse } from '../types';
 import { fmtKmBare, paceSecToStr } from '../utils';
+import { openPanel, closePanel } from './panelUtils';
 
 
 export function createUserPanel(): { panel: HTMLDivElement; content: HTMLElement; backdrop: HTMLDivElement } {
@@ -80,18 +81,13 @@ function renderLoggedIn(me: MeResponse, userContent: HTMLElement) {
       label: 'Total Runs', 
       value: me.run_count_all?.toLocaleString() || '−'
     },
-    { 
-      icon: '📏', 
-      label: 'Total Distance', 
+    {
+      icon: '📏',
+      label: 'Total Distance',
       value: fmtKmBare(me.run_distance_all_m)
     },
-    // { 
-    //   icon: '⚖️', 
-    //   label: 'Weight', 
-    //   value: me.weight_kg ? `${me.weight_kg} kg` : '−'
-    // },
-    { 
-      icon: '⏱️', 
+    {
+      icon: '⏱️',
       label: 'Avg Pace (Last 5)', 
       value: paceSecToStr(me.avg_pace_5_sec_per_km)
     },
@@ -167,12 +163,8 @@ export async function openUserPanel(
   accountControl: { setIcon: (connected: boolean) => void }
 ) {
   content.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>Loading...</p></div>';
-  
-  backdrop.classList.remove('hidden');
-  panel.classList.remove('hidden');
-  panel.classList.add('opening');
-  
-  setTimeout(() => panel.classList.remove('opening'), 300);
+
+  openPanel(panel, backdrop);
 
   try {
     const me = await api.getMe();
@@ -190,15 +182,7 @@ export async function openUserPanel(
 }
 
 export function closeUserPanel(panel: HTMLElement, backdrop: HTMLElement) {
-  panel.classList.add('closing');
-  backdrop.classList.add('closing');
-  
-  setTimeout(() => {
-    panel.classList.add('hidden');
-    backdrop.classList.add('hidden');
-    panel.classList.remove('closing');
-    backdrop.classList.remove('closing');
-  }, 250);
+  closePanel(panel, backdrop);
 }
 
 export async function initAccountIcon(
