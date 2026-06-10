@@ -69,7 +69,7 @@ export function setupEventHandlers({ map, routeManager, dom }: EventHandlerConfi
   dom.loadGpxInput.addEventListener('change', async () => {
     const file = dom.loadGpxInput.files?.[0];
     if (!file) return;
-    await loadGPX(file, map, routeManager);
+    await loadGPX(file, routeManager);
     dom.loadGpxInput.value = '';
   });
 

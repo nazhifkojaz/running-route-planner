@@ -1,5 +1,3 @@
-import L from 'leaflet';
-import { CONFIG } from '../config';
 import type { RouteManager } from '../routing/routeManager';
 import { trackEvent } from '../services/analytics';
 import { state } from '../state';
@@ -18,12 +16,6 @@ type FileSaveHandle = {
     close: () => Promise<void>;
   }>;
 };
-
-const ROUTE_STYLE = {
-  weight: CONFIG.ROUTE_WEIGHT,
-  opacity: CONFIG.ROUTE_OPACITY,
-  pane: 'routePane',
-} as const;
 
 export async function downloadGPX(gpx: string, filename = 'route.gpx') {
   const type = 'application/gpx+xml';
@@ -93,41 +85,19 @@ export async function saveGPX() {
 
 export async function loadGPX(
   file: File,
-  map: L.Map,
   routeManager: RouteManager
 ) {
   try {
     const text = await file.text();
     const { route, markers: gpxMarkers } = fromGPX(text);
 
-    if (state.routeLayer) {
-      routeManager.clearAll();
-    }
+    const distanceM = polylineDistanceMeters(route);
 
-    state.lastRouteLatLngs = route.slice();
-    state.routeLayer = L.polyline(route, ROUTE_STYLE).addTo(map);
-
-    map.fitBounds(state.routeLayer.getBounds(), { padding: CONFIG.FIT_BOUNDS_PADDING });
-
-    if (gpxMarkers.length) {
-      gpxMarkers.forEach(([lat, lon]) => {
-        const m = L.marker([lat, lon], { draggable: true })
-          .on('dragend', (ev: L.LeafletEvent) => {
-            const ll = (ev.target as L.Marker).getLatLng();
-            const idx = state.markers.indexOf(ev.target as L.Marker);
-            if (idx >= 0) state.waypoints[idx] = [ll.lng, ll.lat];
-            routeManager.renderRoute();
-          })
-          .addTo(map);
-        state.markers.push(m);
-        state.waypoints.push([lon, lat]);
-      });
-      routeManager.refreshLabels();
-    }
-
-    state.baseDistanceM = polylineDistanceMeters(route);
-    routeManager.updateStats(state.baseDistanceM, route);
-    routeManager.addKmLabels(route, state.baseDistanceM);
+    await routeManager.loadRouteFromData(
+      route,
+      gpxMarkers,
+      distanceM,
+    );
 
     trackEvent('gpx_loaded');
   } catch (err: unknown) {

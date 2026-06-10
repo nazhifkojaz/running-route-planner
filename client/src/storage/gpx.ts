@@ -1,8 +1,4 @@
-// src/gpx.ts
-
 import type { LatLng } from '../types';
-
-export type { LatLng };
 
 export interface GpxData {
   route: LatLng[];     // polyline geometry (as [lat, lon])
@@ -93,8 +89,6 @@ export function fromGPX(gpxText: string): GpxData {
 
   return { route, markers, name };
 }
-
-/* ---------- internal ---------- */
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;')

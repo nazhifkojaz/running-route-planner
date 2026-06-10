@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import { CONFIG } from '../config';
+import { ROUTING_CONFIG, ROUTE_STYLE } from '../config/routing';
 import { elevationStats } from '../elevation';
 import { trackEvent } from '../services/analytics';
 import { state } from '../state';
@@ -20,12 +20,6 @@ interface StatsElements {
   calVal: HTMLSpanElement;
   distanceV: HTMLSpanElement;
 }
-
-const ROUTE_STYLE = {
-  weight: CONFIG.ROUTE_WEIGHT,
-  opacity: CONFIG.ROUTE_OPACITY,
-  pane: 'routePane',
-} as const;
 
 const KM_ICON = L.divIcon({ className: 'km-anchor', iconSize: [0, 0], iconAnchor: [0, 0] });
 
@@ -125,10 +119,26 @@ export class RouteManager {
     this.computeEtaCal(distance);
   }
 
+  private clearRoute() {
+    if (state.routeLayer) {
+      this.map.removeLayer(state.routeLayer);
+      state.routeLayer = null;
+    }
+  }
+
+  private clearRouteAndMarkers() {
+    this.clearRoute();
+    state.waypoints = [];
+    state.markers.forEach(m => this.map.removeLayer(m));
+    state.markers = [];
+    state.baseDistanceM = 0;
+    state.lastRouteLatLngs = [];
+  }
+
   async renderRoute() {
     const seq = ++this.routeSeq;
 
-    state.clearRoute(this.map);
+    this.clearRoute();
     state.baseDistanceM = 0;
 
     this.stats.elevVal.textContent = '-';
@@ -155,7 +165,7 @@ export class RouteManager {
 
       state.routeLayer = L.polyline(latlngs, ROUTE_STYLE).addTo(this.map);
 
-      this.map.fitBounds(state.routeLayer.getBounds(), { padding: CONFIG.FIT_BOUNDS_PADDING });
+      this.map.fitBounds(state.routeLayer.getBounds(), { padding: ROUTING_CONFIG.FIT_BOUNDS_PADDING });
 
       state.baseDistanceM = distance;
       this.updateStats(distance, latlngs);
@@ -189,7 +199,7 @@ export class RouteManager {
   }
 
   clearAll() {
-    state.clearAll(this.map);
+    this.clearRouteAndMarkers();
     this.kmLayer.clearLayers();
 
     this.stats.elevVal.textContent = '-';
@@ -229,7 +239,7 @@ export class RouteManager {
     state.baseDistanceM = distance_m;
 
     state.routeLayer = L.polyline(routeLatLngs, ROUTE_STYLE).addTo(this.map);
-    this.map.fitBounds(state.routeLayer.getBounds(), { padding: CONFIG.FIT_BOUNDS_PADDING });
+    this.map.fitBounds(state.routeLayer.getBounds(), { padding: ROUTING_CONFIG.FIT_BOUNDS_PADDING });
 
     waypoints.forEach(([lat, lon]) => {
       state.markers.push(this.createDraggableMarker(lat, lon));

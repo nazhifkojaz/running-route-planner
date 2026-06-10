@@ -18,15 +18,6 @@ export interface MeResponse {
   avg_hr_5?: number | null;
 }
 
-export interface AppState {
-  waypoints: LonLat[];
-  markers: L.Marker[];
-  routeLayer: L.Polyline | null;
-  baseDistanceM: number;
-  lastRouteLatLngs: LatLng[];
-  orsDegraded: boolean;
-}
-
 export interface GeoJSONGeometry {
   type: 'LineString';
   coordinates: [number, number][]; // [lon, lat][]
@@ -102,14 +93,4 @@ export interface LocationInfo {
   city?: string;
   country?: string;
   full_address?: string;
-}
-
-export interface PanelElements {
-  settingsPanel: HTMLDivElement;
-  userPanel: HTMLDivElement;
-  backdrop: HTMLDivElement;
-  searchPanel: HTMLDivElement;
-  saveRoutePanel: HTMLDivElement;
-  explorePanel: HTMLDivElement;
-  myRoutesPanel: HTMLDivElement;
 }
