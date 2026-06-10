@@ -9,7 +9,6 @@ function downsample<T>(arr: T[], maxPoints = 100): T[] {
   return out;
 }
 
-// Fetch elevation profile using the Open‑Elevation public API
 export async function elevationStats(latlngs: [number, number][]): Promise<ElevStats | null> {
   try {
     const pts = downsample(latlngs, 100);

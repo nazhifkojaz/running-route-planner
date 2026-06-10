@@ -33,7 +33,6 @@ export function initializePanels(): PanelContext {
     settingsPanel,
     userPanel,
     userContent,
-    // Keep the DOM id so we can fetch the element reliably later
     userCloseButtonId: 'userClose',
     backdrop,
     searchPanel,

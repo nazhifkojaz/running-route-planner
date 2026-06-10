@@ -7,3 +7,9 @@ export const ROUTING_CONFIG = {
   ROAD_RUNNING_CACHE_LIMIT: 200,
   ROAD_RUNNING_COORD_PRECISION: 5,
 } as const;
+
+export const ROUTE_STYLE = {
+  weight: ROUTING_CONFIG.ROUTE_WEIGHT,
+  opacity: ROUTING_CONFIG.ROUTE_OPACITY,
+  pane: 'routePane',
+} as const;

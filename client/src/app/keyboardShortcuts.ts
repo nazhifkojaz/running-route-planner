@@ -5,26 +5,24 @@ import { closeSearchPanel } from '../panels/searchPanel';
 import { closeSettingsPanel } from '../panels/settingsPanel';
 import { closeUserPanel } from '../panels/userPanel';
 import type { RouteManager } from '../routing/routeManager';
-import type { PanelElements } from '../types';
+import type { PanelContext } from './panels';
 
 
 export function setupKeyboardShortcuts(
   routeManager: RouteManager,
-  panels: PanelElements
+  panels: PanelContext
 ) {
   document.addEventListener('keydown', (e: KeyboardEvent) => {
-    // Escape key - Close all panels
     if (e.key === 'Escape') {
       handleEscapeKey(panels);
       return;
     }
 
-    // Ctrl+Z - Undo last waypoint
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       if (isTyping(e.target)) {
         return;
       }
-      
+
       e.preventDefault();
       routeManager.undoLastWaypoint();
       return;
@@ -32,7 +30,7 @@ export function setupKeyboardShortcuts(
   });
 }
 
-function handleEscapeKey(panels: PanelElements) {
+function handleEscapeKey(panels: PanelContext) {
   if (!panels.saveRoutePanel.classList.contains('hidden')) {
     closeSaveRoutePanel(panels.saveRoutePanel, panels.backdrop);
     return;
@@ -69,8 +67,7 @@ function isTyping(target: EventTarget | null): boolean {
   
   const element = target as HTMLElement;
   const tagName = element.tagName.toLowerCase();
-  
-  // Check if user is typing in input, textarea, or contenteditable
+
   return (
     tagName === 'input' ||
     tagName === 'textarea' ||

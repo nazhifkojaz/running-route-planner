@@ -1,11 +1,11 @@
-import { CONFIG } from '../config';
+import { STORAGE_CONFIG } from '../config/storage';
 import { readHashParam } from '../utils';
 
 export function handleHashSession() {
   const sessionFromHash = readHashParam('session');
   if (!sessionFromHash) return;
 
-  localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_TOKEN, sessionFromHash);
+  localStorage.setItem(STORAGE_CONFIG.STORAGE_KEYS.SESSION_TOKEN, sessionFromHash);
 
   const params = new URLSearchParams(location.hash.slice(1));
   params.delete('session');

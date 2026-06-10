@@ -1,29 +1,31 @@
 import L from 'leaflet';
-import { CONFIG } from '../config';
+import { MAP_CONFIG } from '../config/map';
+import { UI_CONFIG } from '../config/ui';
+import { GEOLOCATION_CONFIG } from '../config/geolocation';
 
 export function initializeMap(containerId = 'map'): { map: L.Map; kmLayer: L.LayerGroup } {
   const map = L.map(containerId);
 
   const routePane = map.createPane('routePane');
-  routePane.style.zIndex = CONFIG.Z_INDEX.ROUTE_PANE;
+  routePane.style.zIndex = UI_CONFIG.Z_INDEX.ROUTE_PANE;
 
   const kmPane = map.createPane('kmPane');
-  kmPane.style.zIndex = CONFIG.Z_INDEX.KM_PANE;
+  kmPane.style.zIndex = UI_CONFIG.Z_INDEX.KM_PANE;
 
-  map.setView(CONFIG.DEFAULT_LOCATION, CONFIG.DEFAULT_ZOOM);
-  L.tileLayer(CONFIG.TILE_URL, {
-    maxZoom: CONFIG.MAX_ZOOM,
-    attribution: CONFIG.TILE_ATTRIBUTION,
+  map.setView(MAP_CONFIG.DEFAULT_LOCATION, MAP_CONFIG.DEFAULT_ZOOM);
+  L.tileLayer(MAP_CONFIG.TILE_URL, {
+    maxZoom: MAP_CONFIG.MAX_ZOOM,
+    attribution: MAP_CONFIG.TILE_ATTRIBUTION,
   }).addTo(map);
 
   if ('geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(
       (pos) => map.setView(
         [pos.coords.latitude, pos.coords.longitude],
-        CONFIG.USER_LOCATION_ZOOM
+        MAP_CONFIG.USER_LOCATION_ZOOM
       ),
       () => {},
-      CONFIG.GEO_OPTIONS
+      GEOLOCATION_CONFIG.GEO_OPTIONS
     );
   }
 

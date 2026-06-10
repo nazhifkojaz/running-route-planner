@@ -142,16 +142,7 @@ export async function bootstrapApp() {
 
   setupEventHandlers({ map, routeManager, dom });
 
-  setupKeyboardShortcuts(routeManager, {
-    settingsPanel: dom.settingsPanel,
-    userPanel: dom.userPanel,
-    backdrop: dom.backdrop,
-    searchPanel: dom.searchPanel,
-    saveRoutePanel: dom.saveRoutePanel,
-    explorePanel: dom.explorePanel,
-    myRoutesPanel: dom.myRoutesPanel,
-  });
+  setupKeyboardShortcuts(routeManager, panels);
 
   markersToggle.setVisibility(true);
-  console.log('Running Route Planner initialized');
 }

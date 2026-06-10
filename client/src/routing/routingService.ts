@@ -1,4 +1,5 @@
-import { CONFIG } from '../config';
+import { ROUTING_CONFIG } from '../config/routing';
+import { STORAGE_CONFIG } from '../config/storage';
 import { state } from '../state';
 import type { LonLat, RouteResult } from '../types';
 import { haversineMeters } from '../utils';
@@ -26,7 +27,7 @@ export class RoutingService {
     return coords
       .map(
         ([lon, lat]) =>
-          `${lon.toFixed(CONFIG.ROAD_RUNNING_COORD_PRECISION)},${lat.toFixed(CONFIG.ROAD_RUNNING_COORD_PRECISION)}`,
+          `${lon.toFixed(ROUTING_CONFIG.ROAD_RUNNING_COORD_PRECISION)},${lat.toFixed(ROUTING_CONFIG.ROAD_RUNNING_COORD_PRECISION)}`,
       )
       .join(';');
   }
@@ -34,7 +35,7 @@ export class RoutingService {
   private cacheOsrmRequest(cacheKey: string, request: Promise<RouteResult>) {
     this.osrmCache.set(cacheKey, request);
 
-    if (this.osrmCache.size > CONFIG.ROAD_RUNNING_CACHE_LIMIT) {
+    if (this.osrmCache.size > ROUTING_CONFIG.ROAD_RUNNING_CACHE_LIMIT) {
       const oldestKey = this.osrmCache.keys().next().value;
       if (oldestKey) this.osrmCache.delete(oldestKey);
     }
@@ -42,7 +43,7 @@ export class RoutingService {
 
   private async fetchOsrmDriving(coords: LonLat[]): Promise<RouteResult> {
     const path = coords.map((c) => `${c[0]},${c[1]}`).join(';');
-    const url = `${CONFIG.OSRM_BASE}/route/v1/driving/${path}?overview=full&geometries=geojson&steps=false`;
+    const url = `${ROUTING_CONFIG.OSRM_BASE}/route/v1/driving/${path}?overview=full&geometries=geojson&steps=false`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`OSRM HTTP ${res.status}`);
     const data = await res.json();
@@ -159,7 +160,7 @@ export class RoutingService {
       throw new Error('ORS key missing');
     }
 
-    const res = await fetch(`${CONFIG.ORS_BASE}/v2/directions/foot-walking/geojson`, {
+    const res = await fetch(`${ROUTING_CONFIG.ORS_BASE}/v2/directions/foot-walking/geojson`, {
       method: 'POST',
       headers: {
         Authorization: key,
@@ -215,9 +216,9 @@ export class RoutingService {
   }
 
   initOrsKey() {
-    this.orsKeyInput.value = localStorage.getItem(CONFIG.STORAGE_KEYS.ORS_KEY) ?? '';
+    this.orsKeyInput.value = localStorage.getItem(STORAGE_CONFIG.STORAGE_KEYS.ORS_KEY) ?? '';
     this.orsKeyInput.addEventListener('input', () => {
-      localStorage.setItem(CONFIG.STORAGE_KEYS.ORS_KEY, this.orsKeyInput.value.trim());
+      localStorage.setItem(STORAGE_CONFIG.STORAGE_KEYS.ORS_KEY, this.orsKeyInput.value.trim());
       state.orsDegraded = false;
       this.updateEngineAvailability();
     });

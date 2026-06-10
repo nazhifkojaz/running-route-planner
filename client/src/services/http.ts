@@ -1,7 +1,8 @@
-import { CONFIG } from '../config';
+import { API_CONFIG } from '../config/api';
+import { STORAGE_CONFIG } from '../config/storage';
 
 export function getAuthHeaders(includeContentType = false): HeadersInit {
-  const token = localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_TOKEN);
+  const token = localStorage.getItem(STORAGE_CONFIG.STORAGE_KEYS.SESSION_TOKEN);
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
   if (includeContentType) headers['Content-Type'] = 'application/json';
@@ -9,5 +10,5 @@ export function getAuthHeaders(includeContentType = false): HeadersInit {
 }
 
 export function buildUrl(path: string): string {
-  return `${CONFIG.API_BASE}${path}`;
+  return `${API_CONFIG.API_BASE}${path}`;
 }
